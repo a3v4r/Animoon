@@ -1,9 +1,16 @@
-# AniLibrix: Reborn
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+    <img src=".github/assets/logo-light.svg" alt="Animoon" width="420">
+  </picture>
+</h1>
 
-Десктопный клиент [AniLibria](https://anilibria.top) для Windows, Linux и macOS на Tauri 2 и Vue 3.
-Неофициальный: видео, описания и расписание берутся из открытого API AniLibria.
+Неофициальный десктопный клиент [AniLiberty](https://aniliberty.top) (бывш. AniLibria) для Windows, Linux
+и macOS на Tauri 2 и Vue 3. Видео, описания и расписание берутся из открытого API AniLiberty.
 
-![Каталог AniLibrix](.github/assets/catalog.jpg)
+> Animoon не связан с командой AniLiberty и не является её официальным приложением.
+
+![Каталог Animoon](.github/assets/catalog.jpg)
 
 > Ветка `tauri` — новая версия, переписанная с Electron. Electron-версия остаётся в `main`, пока новая не
 > догонит её по возможностям. Что сделано и что дальше — в [`docs/STATE.md`](docs/STATE.md).
@@ -19,7 +26,7 @@
 - **Страница релиза**: серии кадрами или списком, отметки просмотра, «Продолжить» с места остановки.
 - **Плеер HLS**: качество 480/720/1080p, скорость, отметки опенинга и эндинга, «Пропустить опенинг»,
   автопереход к следующей серии с отсчётом, список серий, полный экран.
-- **Аккаунт AniLibria**: вход по логину и паролю, избранное, прогресс просмотра синхронизируется с тайм-кодами
+- **Аккаунт AniLiberty**: вход по логину и паролю, избранное, прогресс просмотра синхронизируется с тайм-кодами
   аккаунта — после переустановки или на другом компьютере он сохраняется.
 - **Уведомления** о новых сериях релизов из избранного (проверка раз в 10 минут; если окно не активно — системное уведомление).
 - **Поиск и переход** из любого экрана: `Ctrl K`, ищет и разделы, и релизы.
@@ -97,7 +104,7 @@ DevTools-протокол — на `http://127.0.0.1:9222/json/list`.
 `tauri-plugin-http` (Rust), а не через `fetch` WebView: без CORS.
 
 CSP задан в `tauri.conf.json` и действует только в собранном приложении (в `pnpm tauri dev` его нет):
-проверять через `pnpm tauri build --debug`. Если AniLibria сменит домен видео (`*.libria.fun`) или зеркал,
+проверять через `pnpm tauri build --debug`. Если AniLiberty сменит домен видео (`*.libria.fun`) или зеркал,
 их нужно поправить в трёх местах: `MIRRORS` в `src/api/http.ts`, `http:default` в `capabilities/default.json`
 и CSP.
 
@@ -121,5 +128,6 @@ CSP задан в `tauri.conf.json` и действует только в соб
 
 ## Лицензия
 
-[MIT](LICENSE). Шрифты Onest и Unbounded — SIL Open Font License (`src/assets/fonts`), иконки —
+[MIT](LICENSE). Проект начинался с [AniLibrix](https://github.com/pavloniym/anilibrix) от pavloniym — спасибо
+за идею; код с тех пор переписан полностью. Шрифты Onest и Unbounded — SIL Open Font License (`src/assets/fonts`), иконки —
 Material Design Icons (Apache 2.0).

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "AniLibrix Reborn",
+  "productName": "Animoon",
   "version": "2.0.0",
-  "identifier": "com.a3v4r.anilibrix",
+  "identifier": "com.a3v4r.animoon",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://127.0.0.1:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "AniLibrix",
+        "title": "Animoon",
         "width": 1280,
         "height": 760,
         "minWidth": 960,

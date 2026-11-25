@@ -1,8 +1,8 @@
 <template>
   <div class="login-page">
     <div class="login">
-      <span class="mark" aria-hidden="true"><v-icon icon="mdi-play" size="26" /></span>
-      <h1 class="title font-display">Вход в AniLibria</h1>
+      <img class="mark" :src="markUrl" alt="" draggable="false">
+      <h1 class="title font-display">Вход в AniLiberty</h1>
       <p class="lead">Избранное и история просмотра синхронизируются с аккаунтом на сайте.</p>
 
       <v-form class="form" @submit.prevent="submit">
@@ -64,6 +64,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { mirror } from '@/api/http'
+// ?no-inline: иначе Vite вставит маленький SVG как data:, а CSP (img-src) data: не пускает.
+import markUrl from '@/assets/brand/mark.svg?no-inline'
 import { useAccountStore } from '@/stores/account'
 import { useEpisodeIndexStore } from '@/stores/episodeIndex'
 import { useProgressStore } from '@/stores/progress'
@@ -118,13 +120,8 @@ async function submit (): Promise<void> {
 }
 
 .mark {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  width: 64px;
+  height: 64px;
 }
 
 .title {

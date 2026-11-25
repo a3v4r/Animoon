@@ -58,7 +58,7 @@ jobs:
           }
           id=$(find_id)
           if [ -z "$id" ]; then
-            flags=(--draft --verify-tag --generate-notes --title "AniLibrix Reborn $TAG")
+            flags=(--draft --verify-tag --generate-notes --title "Animoon $TAG")
             case "$TAG" in *-*) flags+=(--prerelease) ;; esac
             gh release create "$TAG" -R "$GITHUB_REPOSITORY" "${flags[@]}"
             id=$(find_id)

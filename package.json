@@ -1,8 +1,8 @@
 {
-  "name": "anilibrix-reborn",
+  "name": "animoon",
   "private": true,
   "version": "2.0.0",
-  "description": "AniLibrix Reborn — десктопный клиент AniLibria на Tauri 2",
+  "description": "Animoon — неофициальный десктопный клиент AniLiberty (бывш. AniLibria) на Tauri 2",
   "license": "MIT",
   "type": "module",
   "scripts": {

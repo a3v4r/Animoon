@@ -2,9 +2,9 @@
   <header class="bar" :class="{ 'bar--solid': solid }" data-tauri-drag-region>
     <div class="brand" data-tauri-drag-region>
       <span class="brand-cell" data-tauri-drag-region>
-        <span class="mark" data-tauri-drag-region><v-icon icon="mdi-play" size="20" data-tauri-drag-region /></span>
+        <img class="mark" :src="markUrl" alt="" draggable="false" data-tauri-drag-region>
       </span>
-      <span class="brand-name" data-tauri-drag-region>AniLibrix</span>
+      <span class="brand-name" data-tauri-drag-region>Animoon</span>
     </div>
 
     <button v-if="canGoBack" class="ui-btn icon-btn icon-btn--glass" title="Назад (Alt ←)" aria-label="Назад" @click="router.back()">
@@ -28,6 +28,8 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppNotifications from '@/components/AppNotifications.vue'
 import AppSearch from '@/components/AppSearch.vue'
+// ?no-inline: иначе Vite вставит маленький SVG как data:, а CSP (img-src) data: не пускает.
+import markUrl from '@/assets/brand/mark.svg?no-inline'
 import { isTauri } from '@/utils/window'
 import WindowControls from './WindowControls.vue'
 
@@ -98,14 +100,8 @@ onBeforeUnmount(removeAfterEach)
 }
 
 .mark {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 20px;
+  width: 30px;
+  height: 30px;
 }
 
 .drag {

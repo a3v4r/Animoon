@@ -122,10 +122,12 @@
       </section>
 
       <footer class="about">
-        <span class="font-display about-name">AniLibrix</span>
+        <span class="font-display about-name">Animoon</span>
         <span v-if="version">{{ version }}</span>
         <span>·</span>
-        <span>данные и видео — AniLibria ({{ mirrorHost }})</span>
+        <span>неофициальный клиент AniLiberty (бывш. AniLibria), не связан с командой проекта</span>
+        <span>·</span>
+        <span>данные и видео — {{ mirrorHost }}</span>
       </footer>
     </div>
   </div>

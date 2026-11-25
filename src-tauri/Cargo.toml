@@ -1,13 +1,13 @@
 [package]
-name = "anilibrix"
+name = "animoon"
 version = "2.0.0"
-description = "AniLibrix Reborn — десктопный клиент AniLibria"
+description = "Animoon — неофициальный десктопный клиент AniLiberty (бывш. AniLibria)"
 license = "MIT"
 edition = "2021"
 rust-version = "1.90"
 
 [lib]
-name = "anilibrix_lib"
+name = "animoon_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
