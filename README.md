@@ -40,7 +40,7 @@
 
 ## Установка
 
-Установщики — на странице [Releases](https://github.com/a3v4r/anilibrix-reborn/releases):
+Установщики — на странице [Releases](https://github.com/a3v4r/animoon/releases):
 
 - **Windows** — `*-setup.exe`. Установщик не подписан сертификатом, поэтому при первом запуске SmartScreen
   покажет «Система Windows защитила ваш компьютер»: «Подробнее» → «Выполнить в любом случае».
