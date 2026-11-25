@@ -12,8 +12,8 @@
 
 ![Каталог Animoon](.github/assets/catalog.jpg)
 
-> Ветка `tauri` — новая версия, переписанная с Electron. Electron-версия остаётся в `main`, пока новая не
-> догонит её по возможностям. Что сделано и что дальше — в [`docs/STATE.md`](docs/STATE.md).
+> Это новая версия, переписанная с Electron на Tauri. Старая Electron-версия (AniLibrix 1.6.8) — тег
+> `electron-1.6.8`. Что сделано и что дальше — в [`docs/STATE.md`](docs/STATE.md).
 
 ## Возможности
 

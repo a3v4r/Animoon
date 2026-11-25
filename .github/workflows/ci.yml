@@ -1,9 +1,9 @@
-# Проверка на каждый пуш в tauri и на pull request: типы и сборка фронтенда, clippy для Rust.
+# Проверка на каждый пуш в main и на pull request: типы и сборка фронтенда, clippy для Rust.
 name: CI
 
 on:
   push:
-    branches: [tauri]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
