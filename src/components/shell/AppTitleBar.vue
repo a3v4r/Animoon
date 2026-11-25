@@ -13,7 +13,7 @@
 
     <div class="drag" data-tauri-drag-region />
 
-    <app-search class="search" />
+    <app-search />
     <app-notifications />
 
     <template v-if="isTauri">
@@ -107,11 +107,6 @@ onBeforeUnmount(removeAfterEach)
 .drag {
   flex: 1;
   align-self: stretch;
-}
-
-.search {
-  flex: 0 1 320px;
-  min-width: 180px;
 }
 
 .icon-btn {

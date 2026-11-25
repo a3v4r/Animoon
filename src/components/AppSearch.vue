@@ -1,60 +1,68 @@
 <template>
-  <v-menu
-    v-model="open"
-    :close-on-content-click="true"
-    :open-on-click="false"
-    location="bottom end"
-    max-height="480"
-    offset="6"
-  >
-    <template #activator="{ props: menuProps }">
-      <label v-bind="menuProps" class="search" :class="{ 'search--focus': focused }">
-        <v-icon class="icon" :icon="loading ? 'mdi-loading mdi-spin' : 'mdi-magnify'" size="18" />
-        <input
-          ref="input"
-          v-model="query"
-          class="input"
-          placeholder="Поиск и переход"
-          spellcheck="false"
-          @blur="focused = false"
-          @focus="onFocus"
-          @keydown.enter="openFirst"
-          @keydown.esc="clear"
-        >
-        <kbd v-if="!query" class="kbd">Ctrl K</kbd>
-        <button v-else class="ui-btn clear" title="Очистить" aria-label="Очистить" @mousedown.prevent="clear">
-          <v-icon icon="mdi-close" size="16" />
-        </button>
-      </label>
-    </template>
+  <!-- Обёртка — корень компонента: класс от родителя ложится на неё, а не на корень v-menu
+       (он уходит в слой оверлеев, и стили поля превращались в полосу во всю ширину окна).
+       В фокусе поле расширяется до ширины списка результатов, и список встаёт ровно под ним. -->
+  <div class="search-root" :class="{ 'search-root--wide': focused || open }">
+    <v-menu
+      v-model="open"
+      :close-on-content-click="true"
+      :open-on-click="false"
+      location="bottom end"
+      max-height="480"
+      max-width="440"
+      offset="6"
+    >
+      <template #activator="{ props: menuProps }">
+        <label v-bind="menuProps" class="search" :class="{ 'search--focus': focused }">
+          <v-icon class="icon" :icon="loading ? 'mdi-loading mdi-spin' : 'mdi-magnify'" size="18" />
+          <input
+            ref="input"
+            v-model="query"
+            class="input"
+            placeholder="Поиск и переход"
+            spellcheck="false"
+            @blur="focused = false"
+            @focus="onFocus"
+            @keydown.enter="openFirst"
+            @keydown.esc="clear"
+          >
+          <kbd v-if="!query" class="kbd">Ctrl K</kbd>
+          <button v-else class="ui-btn clear" title="Очистить" aria-label="Очистить" @mousedown.prevent="clear">
+            <v-icon icon="mdi-close" size="16" />
+          </button>
+        </label>
+      </template>
 
-    <v-list v-if="hasQuery" class="results" density="compact" width="440">
-      <!-- Сначала разделы приложения: «Поиск и переход». -->
-      <v-list-item
-        v-for="section in sections"
-        :key="section.name"
-        :prepend-icon="section.icon"
-        :title="section.title"
-        :to="{ name: section.name }"
-        subtitle="Раздел"
-      />
-      <v-divider v-if="sections.length && results.length" />
-      <v-list-item v-if="!loading && searched && results.length === 0 && sections.length === 0" title="Ничего не нашлось" />
-      <v-list-item
-        v-for="release in results"
-        :key="release.id"
-        :subtitle="[release.type?.description, release.year].filter(Boolean).join(' · ')"
-        :title="release.name.main"
-        :to="{ name: 'release', params: { id: release.id } }"
-      >
-        <template #prepend>
-          <v-avatar rounded="sm" size="40">
-            <v-img :src="mediaUrl(release.poster.optimized?.thumbnail ?? release.poster.thumbnail)" cover />
-          </v-avatar>
-        </template>
-      </v-list-item>
-    </v-list>
-  </v-menu>
+      <v-list v-if="hasQuery" class="results" density="compact">
+        <!-- Сначала разделы приложения: «Поиск и переход». -->
+        <v-list-item
+          v-for="section in sections"
+          :key="section.name"
+          :prepend-icon="section.icon"
+          :title="section.title"
+          :to="{ name: section.name }"
+          subtitle="Раздел"
+        />
+        <v-divider v-if="sections.length && results.length" />
+        <!-- Пока ждём ответ, меню уже открыто — без этой строки оно было пустой полоской. -->
+        <v-list-item v-if="!searched && results.length === 0 && sections.length === 0" title="Ищем…" />
+        <v-list-item v-if="!loading && searched && results.length === 0 && sections.length === 0" title="Ничего не нашлось" />
+        <v-list-item
+          v-for="release in results"
+          :key="release.id"
+          :subtitle="[release.type?.description, release.year].filter(Boolean).join(' · ')"
+          :title="release.name.main"
+          :to="{ name: 'release', params: { id: release.id } }"
+        >
+          <template #prepend>
+            <v-avatar rounded="sm" size="40">
+              <v-img :src="mediaUrl(release.poster.optimized?.thumbnail ?? release.poster.thumbnail)" cover />
+            </v-avatar>
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -148,6 +156,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <style scoped>
+.search-root {
+  flex: 0 1 320px;
+  min-width: 180px;
+  transition: flex-basis 0.2s ease;
+}
+
+.search-root--wide {
+  flex-basis: 440px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-root {
+    transition: none;
+  }
+}
+
 .search {
   height: 36px;
   display: flex;
