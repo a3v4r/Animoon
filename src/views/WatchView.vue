@@ -26,7 +26,6 @@
     />
     <div class="shade" />
 
-    <!-- Верх: выход, название, перетаскивание окна (не в полноэкранном режиме) и кнопки окна. -->
     <header
       class="top chrome"
       v-bind="dragAttrs"
@@ -46,7 +45,6 @@
       <window-controls v-if="!player.fullscreen" />
     </header>
 
-    <!-- Большая кнопка на паузе (в том числе если пауза пришлась на подгрузку). -->
     <button
       v-if="state.paused && !loading && !error"
       class="ui-btn big-play"
@@ -60,7 +58,6 @@
     <div v-if="loading || (buffering && !state.paused)" class="center"><v-progress-circular indeterminate size="48" /></div>
     <v-alert v-if="error" class="center error" type="error" variant="tonal">{{ error }}</v-alert>
 
-    <!-- Пропуск опенинга и следующая серия — над панелью. -->
     <div class="floating" @mouseenter="chromeHover = true" @mouseleave="chromeHover = false">
       <button v-if="showSkip" class="ui-btn skip" :class="{ 'skip--pinned': skipPinned }" @click="skipOpening">
         Пропустить опенинг <kbd>S</kbd>
@@ -86,7 +83,6 @@
       </div>
     </div>
 
-    <!-- Низ: стеклянная панель с полосой перемотки и кнопками. -->
     <div class="panel chrome" @mouseenter="chromeHover = true" @mouseleave="chromeHover = false">
       <seek-bar :buffered="state.buffered" :current="state.time" :duration="state.duration" :marks="marks" @seek="seek" />
       <div class="controls">
@@ -108,7 +104,7 @@
         <button class="ui-btn ctl" :title="isSilent ? 'Включить звук (M)' : 'Выключить звук (M)'" :aria-label="isSilent ? 'Включить звук' : 'Выключить звук'" @click="toggleMute">
           <v-icon :icon="volumeIcon" size="22" />
         </button>
-        <!-- После работы мышью фокус с ползунка снимается, чтобы горячие клавиши сразу работали. -->
+        <!-- blur после мыши, иначе стрелки останутся у ползунка, а не у плеера -->
         <input
           aria-label="Громкость"
           :aria-valuetext="`${Math.round(displayedVolume * 100)}%`"
@@ -165,7 +161,6 @@
       </div>
     </div>
 
-    <!-- Список серий справа. -->
     <transition name="slide">
       <episode-list
         v-if="listOpen"
@@ -198,9 +193,7 @@ import { formatDuration } from '@/utils/time'
 import { windowControls } from '@/utils/window'
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2]
-// Сколько секунд показывать «Следующая через N с» после конца серии.
 const COUNTDOWN_SECONDS = 8
-// Клавиши, которыми управляется сам ползунок громкости, когда на нём фокус.
 const RANGE_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']
 
 const props = defineProps<{ id: string, ordinal: string }>()
@@ -218,26 +211,21 @@ const buffering = ref(false)
 const error = ref('')
 const idle = ref(false)
 
-// Список серий справа.
 const listOpen = ref(false)
 const listOpenedByKeyboard = ref(false)
 const listBtn = ref<HTMLButtonElement | null>(null)
 const episodeList = ref<{ containsFocus: () => boolean } | null>(null)
 
-// Открытые меню и курсор над панелями держат интерфейс на экране.
 const rateMenu = ref(false)
 const qualityMenu = ref(false)
 const chromeHover = ref(false)
 const holdUi = computed(() => chromeHover.value || rateMenu.value || qualityMenu.value || listOpen.value)
 
-// Опенинг пропущен автоматически: кнопка остаётся, если пользователь вернулся назад в опенинг.
+// после автопропуска кнопка остаётся, если вернулись назад в опенинг
 const autoSkipped = ref(false)
-// Кнопка пропуска видна первые 8 секунд опенинга даже при простое.
 const skipPinned = ref(false)
-// Обратный отсчёт до следующей серии после конца текущей; null — нет отсчёта.
 const countdown = ref<number | null>(null)
 
-// Снимок состояния <video> для шаблона.
 const state = reactive({ time: 0, duration: 0, buffered: 0, paused: true, volume: 1, muted: false, rate: 1 })
 
 let hls: Hls | null = null
@@ -263,7 +251,6 @@ const sources = computed<Partial<Record<Quality, string>>>(() => {
   return list
 })
 const qualities = computed(() => (Object.keys(sources.value) as Quality[]).sort((a, b) => Number(b) - Number(a)))
-// Выбранное качество; если серии в нём нет — лучшее доступное.
 const activeQuality = computed<Quality>(() => (sources.value[player.quality] ? player.quality : qualities.value[0] ?? player.quality))
 
 function range (r: { start: number | null, stop: number | null } | undefined) {
@@ -280,15 +267,12 @@ const marks = computed<SeekMark[]>(() => {
 
 const inOpening = computed(() => opening.value != null && state.time >= opening.value.start && state.time < opening.value.stop - 1)
 const inEnding = computed(() => ending.value != null && state.time >= ending.value.start && state.time < ending.value.stop - 1)
-// Карточка «Следующая» — на эндинге, за полторы минуты до конца и во время отсчёта.
 const nearEnd = computed(() => inEnding.value || (state.duration > 0 && state.duration - state.time < 90))
 const showNext = computed(() => countdown.value != null || nearEnd.value)
 const showSkip = computed(() => inOpening.value && (!settings.autoSkipOpening || autoSkipped.value))
 
-// Перетаскивание окна за верхнюю полосу — только не в полноэкранном режиме.
 const dragAttrs = computed(() => (player.fullscreen ? {} : { 'data-tauri-drag-region': '' }))
 
-/** «Серия 4 из 9 · озвучка» в середине панели. */
 const midLine = computed(() => {
   if (!episode.value || !release.value) return ''
   const voices = release.value.members.filter(m => m.role.value === 'voicing').map(m => m.nickname)
@@ -333,7 +317,6 @@ function load (startAt: number): void {
   hls?.destroy()
   hls = null
 
-  // Громкость и выключенный звук переносятся между сериями.
   video.volume = player.volume
   video.muted = player.muted
   if (Hls.isSupported()) {
@@ -361,7 +344,6 @@ function load (startAt: number): void {
   }
 }
 
-/** С какого места начать: сохранённый прогресс, если серия не досмотрена. */
 function startPosition (): number {
   const e = episode.value
   if (!e || !settings.resume) return 0
@@ -389,7 +371,7 @@ function onTimeUpdate (): void {
 
 function onPause (): void {
   sync()
-  // Пауза во время подгрузки: индикатор не нужен, нужна большая кнопка.
+  // пауза во время подгрузки: вместо спиннера нужна большая кнопка
   buffering.value = false
   saveProgress()
   void progress.flush()
@@ -425,7 +407,7 @@ function togglePlay (): void {
   else v.pause()
 }
 
-// Одиночный клик по видео — пауза (или закрыть список серий), двойной — полный экран без лишней паузы.
+// клик откладываем, чтобы двойной (полный экран) не ставил паузу
 function onSurfaceClick (event: MouseEvent): void {
   if (event.detail > 1) return
   window.clearTimeout(clickTimer)
@@ -444,7 +426,7 @@ function seek (time: number): void {
   if (videoEl.value) videoEl.value.currentTime = Math.max(0, Math.min(time, state.duration || time))
 }
 
-/** Громкость с шагом в сотые; ноль — это «выключить звук», а прежняя громкость сохраняется. */
+// ноль = muted, прежняя громкость остаётся для toggleMute
 function setVolume (value: number): void {
   const v = videoEl.value
   if (!v) return
@@ -506,20 +488,17 @@ function toggleList (event: MouseEvent): void {
     closeList()
     return
   }
-  // detail === 0 — нажали с клавиатуры (Enter/пробел), а не мышью.
+  // detail === 0: нажали с клавиатуры, а не мышью
   listOpenedByKeyboard.value = event.detail === 0
   listOpen.value = true
 }
 
-/** Закрыть список; если фокус был в нём — вернуть его на кнопку списка. */
 function closeList (): void {
   const hadFocus = episodeList.value?.containsFocus() ?? false
   listOpen.value = false
   if (hadFocus) void nextTick(() => listBtn.value?.focus())
 }
 
-// Интерфейс прячется через 3 секунды без движения мыши, пока видео играет,
-// но не пока курсор над панелью, открыто меню или список серий.
 function wake (): void {
   idle.value = false
   window.clearTimeout(idleTimer)
@@ -532,34 +511,29 @@ function wake (): void {
   }, 3000)
 }
 
-// Закрыли меню — интерфейс не пропадает в тот же миг.
 watch([rateMenu, qualityMenu], ([rate, quality]) => {
   if (!rate && !quality) wake()
 })
 
-// Вошли в опенинг — кнопка пропуска видна 8 секунд даже без движения мыши.
 watch(inOpening, value => {
   window.clearTimeout(skipTimer)
   skipPinned.value = value
   if (value) skipTimer = window.setTimeout(() => { skipPinned.value = false }, 8000)
 })
 
-/** Любая клавиша показывает интерфейс (до остальной обработки). */
 function onAnyKey (): void {
   wake()
 }
 
 function onKey (event: KeyboardEvent): void {
   const v = videoEl.value
-  // Сочетания с Ctrl/Alt (например, Ctrl K — поиск) плеер не перехватывает.
   if (!v || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
   const target = event.target instanceof HTMLElement ? event.target : null
   if (target) {
     if (target.isContentEditable || target.matches('input:not([type=range]), textarea, select')) return
-    // На ползунке громкости его собственные клавиши остаются ему, остальные — плееру.
     if (target.matches('input[type=range]') && RANGE_KEYS.includes(event.key)) return
   }
-  // Кнопка, на которую перешли с клавиатуры, нажимается пробелом как обычно.
+  // на кнопке, выбранной с клавиатуры, пробел должен нажимать её, а не ставить паузу
   const keyboardButton = !!target?.closest('button, a[href], [role=button]') && !!target?.matches(':focus-visible')
 
   switch (event.code) {
@@ -575,7 +549,7 @@ function onKey (event: KeyboardEvent): void {
       void toggleFullscreen()
       break
     case 'Escape':
-      // Открытое меню закроет сам Vuetify — больше ничего не делаем.
+      // открытое меню закроет сам Vuetify
       if (rateMenu.value || qualityMenu.value) break
       if (countdown.value != null) cancelCountdown()
       else if (listOpen.value) closeList()
@@ -615,7 +589,6 @@ function onKey (event: KeyboardEvent): void {
   }
 }
 
-// Смена качества: продолжить с того же места.
 watch(activeQuality, (value, old) => {
   if (old && value !== old) load(videoEl.value?.currentTime ?? 0)
 })
@@ -626,7 +599,7 @@ onMounted(async () => {
   wake()
   try {
     release.value = await releases.load(props.id)
-    // Серии нет в карточке из кэша (например, открыли новую серию из уведомления) — перечитать.
+    // в карточке из кэша может не быть новой серии, например при переходе из уведомления
     if (!episode.value) release.value = await releases.load(props.id, true)
     if (!episode.value) {
       error.value = 'Серия не найдена.'
@@ -643,7 +616,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   saveProgress()
   void progress.flush()
-  // Ушли из плеера совсем (а не на другую серию) — выйти из полного экрана.
+  // при переходе на другую серию полный экран не снимаем
   if (player.fullscreen && router.currentRoute.value.name !== 'watch') void toggleFullscreen()
   window.removeEventListener('keydown', onAnyKey, true)
   window.removeEventListener('keydown', onKey)
@@ -671,7 +644,6 @@ onBeforeUnmount(() => {
   background: #000;
 }
 
-/* Затемнение сверху и снизу — под название и панель. */
 .shade {
   position: absolute;
   inset: 0;
@@ -686,7 +658,6 @@ onBeforeUnmount(() => {
   transition: opacity 0.3s;
 }
 
-/* Мышь не двигается, видео играет — всё прячется (кроме закреплённого пропуска и «Следующей»). */
 .watch--idle {
   cursor: none;
 }
@@ -698,13 +669,11 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-/* Работают с клавиатуры — панель с фокусом остаётся видна. */
 .watch--idle .chrome:has(:focus-visible) {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* ---------- верх ---------- */
 .top {
   position: absolute;
   left: 0;
@@ -755,7 +724,6 @@ onBeforeUnmount(() => {
   align-self: stretch;
 }
 
-/* ---------- центр ---------- */
 .big-play {
   position: absolute;
   left: 50%;
@@ -789,7 +757,6 @@ onBeforeUnmount(() => {
   max-width: 480px;
 }
 
-/* ---------- над панелью ---------- */
 .floating {
   position: absolute;
   right: 24px;
@@ -799,7 +766,6 @@ onBeforeUnmount(() => {
   transition: right 0.2s;
 }
 
-/* Открыт список серий — карточки сдвигаются левее него. */
 .watch--list .floating {
   right: calc(24px + 360px + 16px);
 }
@@ -873,7 +839,6 @@ kbd {
   object-fit: cover;
 }
 
-/* Затемнение под значком ▶, чтобы он читался на светлом кадре. */
 .next-thumb::after {
   content: '';
   position: absolute;
@@ -904,7 +869,6 @@ kbd {
   line-height: 20px;
 }
 
-/* Полоска обратного отсчёта по низу карточки. */
 .countdown {
   position: absolute;
   left: 0;
@@ -938,7 +902,6 @@ kbd {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* ---------- панель ---------- */
 .panel {
   position: absolute;
   left: 24px;
@@ -1017,7 +980,6 @@ kbd {
   outline-offset: 2px;
 }
 
-/* Громкость: тонкая полоса, заполненная часть белая. */
 .volume {
   width: 80px;
   height: 16px;
@@ -1064,7 +1026,6 @@ kbd {
   color: var(--text-3);
 }
 
-/* Узкое окно: средняя подпись уходит, остальное помещается. */
 @media (max-width: 1100px) {
   .mid {
     visibility: hidden;
@@ -1083,7 +1044,7 @@ kbd {
 }
 </style>
 
-<!-- Меню скорости и качества рисуются вне плеера (в оверлее), поэтому стиль без scoped. -->
+<!-- меню рисуются в оверлее Vuetify вне плеера, поэтому без scoped -->
 <style>
 .glass-menu.v-list {
   background: rgba(14, 16, 22, 0.92) !important;

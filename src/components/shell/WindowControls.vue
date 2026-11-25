@@ -1,5 +1,4 @@
 <template>
-  <!-- Кнопки окна как в Windows: во всю высоту панели, «Закрыть» в самом углу. -->
   <div v-if="isTauri" class="window-controls">
     <button class="ui-btn win-btn" title="Свернуть" aria-label="Свернуть" @click="windowControls.minimize()">
       <v-icon icon="mdi-window-minimize" size="16" />
@@ -22,7 +21,6 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { isTauri, windowControls } from '@/utils/window'
 
-// Развёрнуто ли окно — для иконки «Развернуть» / «Восстановить».
 const maximized = ref(false)
 async function updateMaximized (): Promise<void> {
   maximized.value = await windowControls.isMaximized()
@@ -34,7 +32,7 @@ onMounted(async () => {
   if (!isTauri) return
   await updateMaximized()
   const unlisten = await windowControls.onResized(() => { void updateMaximized() })
-  // Компонент могли убрать, пока ждали подписку.
+  // Компонент могли размонтировать, пока ждали подписку
   if (alive) unlistenResize = unlisten
   else unlisten?.()
 })

@@ -9,26 +9,18 @@ const EPISODES_KEY = 'index.episodeRelease'
 const RELEASED_KEY = 'index.releasedCount'
 const LAST_KEY = 'index.lastOrdinal'
 
-// Серии, которые API не нашёл (релиз удалён), — помечаются, чтобы не спрашивать снова.
+// -1: серии нет в API (релиз удалён), чтобы не спрашивать снова
 const UNKNOWN = -1
 
 export interface ReleaseProgress {
   watched: number
-  /** Сколько серий вышло; null — неизвестно. */
   released: number | null
-  /** Сколько серий всего планируется; null — неизвестно. */
   total: number | null
 }
 
-/**
- * Справочник серий: к какому релизу относится серия и сколько серий у релиза вышло.
- * Нужен карточкам: тайм-коды аккаунта знают только id серии, а списки каталога — только релиз.
- * Не зависит от аккаунта, поэтому живёт отдельно от прогресса.
- */
 export const useEpisodeIndexStore = defineStore('episodeIndex', () => {
   const episodeRelease = ref<Record<string, number>>(readJson(EPISODES_KEY, {}))
   const releasedCount = ref<Record<number, number>>(readJson(RELEASED_KEY, {}))
-  // Номер последней серии, которую видело приложение: по нему понятно, что число серий устарело.
   const lastOrdinal = ref<Record<number, number>>(readJson(LAST_KEY, {}))
   let resolving = false
 
@@ -38,7 +30,6 @@ export const useEpisodeIndexStore = defineStore('episodeIndex', () => {
     writeJson(LAST_KEY, lastOrdinal.value)
   }
 
-  /** Запомнить серии релиза: со страницы релиза, из избранного. */
   function learn (release: Pick<ReleaseFull, 'id' | 'episodes'>): void {
     for (const episode of release.episodes) episodeRelease.value[episode.id] = release.id
     releasedCount.value[release.id] = release.episodes.length
@@ -46,11 +37,7 @@ export const useEpisodeIndexStore = defineStore('episodeIndex', () => {
     persist()
   }
 
-  /**
-   * Сколько серий вышло, если релиз пришёл без списка серий (лента, каталог).
-   * Запомненное число могло устареть: если последняя серия в ленте новее запомненной,
-   * прибавляем разницу номеров (не меньше одной).
-   */
+  // Запомненное число могло устареть: прибавляем разницу номеров, не меньше одной
   function releasedWithoutEpisodes (release: Release): number | null {
     const known = releasedCount.value[release.id]
     const latest = release.latest_episode
@@ -66,13 +53,11 @@ export const useEpisodeIndexStore = defineStore('episodeIndex', () => {
     return null
   }
 
-  /** Запомненное число серий устарело: в ленте серия новее, чем видело приложение. */
   function isStale (release: Release): boolean {
     const knownLast = lastOrdinal.value[release.id]
     return knownLast != null && release.latest_episode != null && release.latest_episode.ordinal > knownLast
   }
 
-  /** Сколько серий просмотрено по каждому релизу. */
   const watchedByRelease = computed(() => {
     const progress = useProgressStore()
     const counts = new Map<number, number>()
@@ -91,11 +76,6 @@ export const useEpisodeIndexStore = defineStore('episodeIndex', () => {
     return { watched: watchedByRelease.value.get(release.id) ?? 0, released, total }
   }
 
-  /**
-   * Узнать релиз для серий из прогресса, про которые справочник ещё не знает
-   * (просмотры с сайта, другого компьютера, перенесённые из AniLibrix Plus).
-   * Делается один раз на серию, по 4 запроса одновременно.
-   */
   async function resolveUnknown (): Promise<void> {
     if (resolving) return
     resolving = true
@@ -108,7 +88,7 @@ export const useEpisodeIndexStore = defineStore('episodeIndex', () => {
           try {
             episodeRelease.value[id] = await getEpisodeReleaseId(id)
           } catch (error) {
-            // 404 — серии больше нет; сетевая ошибка — попробуем в следующий раз.
+            // 404: серии больше нет, на сетевой ошибке повторим в следующий раз
             if ((error as { status?: number }).status === 404) episodeRelease.value[id] = UNKNOWN
           }
           if (++changed % 20 === 0) persist()

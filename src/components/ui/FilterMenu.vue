@@ -21,10 +21,7 @@
     </template>
 
     <div class="filter-list">
-      <!--
-        listbox с option и aria-selected: selectable даёт роли, :selected — состояние.
-        Пустой @update:selected делает выбор контролируемым: меняет его только toggle.
-      -->
+      <!-- Пустой @update:selected делает выбор контролируемым: меняет его только toggle -->
       <v-list
         selectable
         :selected="selected"
@@ -48,7 +45,6 @@
           </template>
         </v-list-item>
       </v-list>
-      <!-- «Сбросить» — действие, а не вариант, поэтому вне listbox. -->
       <template v-if="showClear">
         <v-divider class="my-1" />
         <v-list class="pt-0" bg-color="transparent" density="compact">
@@ -70,14 +66,11 @@ export interface FilterItem<V> {
 const props = withDefaults(defineProps<{
   label: string
   items: FilterItem<T>[]
-  /** Выбранное: массив при multiple, иначе одно значение или null. */
   modelValue: T[] | T | null
   multiple?: boolean
   clearable?: boolean
   icon?: string
-  /** Считать фильтр включённым (подсвечивать); по умолчанию — когда что-то выбрано. */
   highlight?: boolean
-  /** Подпись для экранного диктора, если видимый текст неполон (например, у сортировки). */
   ariaLabel?: string
 }>(), { multiple: false, clearable: true, icon: undefined, highlight: undefined, ariaLabel: undefined })
 
@@ -95,7 +88,6 @@ const active = computed(() => props.highlight ?? selected.value.length > 0)
 
 const showClear = computed(() => props.clearable && active.value)
 
-/** «ТВ», «ТВ +2» — первое выбранное и сколько ещё. */
 const valueText = computed(() => {
   const titles = selected.value.map(v => props.items.find(i => i.value === v)?.title ?? String(v))
   if (titles.length === 0) return ''
@@ -122,7 +114,7 @@ function clear (): void {
 </script>
 
 <style>
-/* Список фильтра рисуется в оверлее, поэтому стиль без scoped. */
+/* Без scoped: список рисуется в оверлее */
 .filter-list {
   min-width: 200px;
   overflow: auto;

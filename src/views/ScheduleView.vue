@@ -10,7 +10,6 @@
           :aria-current="day.value === today ? 'date' : undefined"
           @click="jumpTo(day.value)"
         >
-          <!-- Видимый текст остаётся в имени кнопки, пояснения — только для диктора. -->
           {{ day.short }}<span class="d-sr-only">, {{ day.title }}<template v-if="day.value === today">, сегодня</template></span>
           <span class="day-count">{{ day.items.length }}<span class="d-sr-only"> {{ pluralize(day.items.length, ['релиз', 'релиза', 'релизов']) }}</span></span>
         </button>
@@ -84,7 +83,6 @@ const items = computed<ScheduleItem[]>(() => scheduleStore.items)
 const loading = ref(false)
 const error = ref('')
 
-// Экран живёт в keep-alive и может быть открыт через полночь — «сегодня» следит за сменой дня.
 const today = ref(weekday())
 const tomorrow = computed(() => (today.value % 7) + 1)
 
@@ -96,7 +94,6 @@ const days = computed(() => DAY_NAMES
     items: items.value.filter(item => item.release.publish_day?.value === i + 1)
   }))
   .filter(day => day.items.length > 0)
-  // Сегодняшний день первым, дальше по порядку недели.
   .sort((a, b) => ((a.value - today.value + 7) % 7) - ((b.value - today.value + 7) % 7)))
 
 const summary = computed(() => {
@@ -107,7 +104,7 @@ const summary = computed(() => {
 function jumpTo (day: number): void {
   const section = document.getElementById(`day-${day}`)
   section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  // Фокус на заголовок дня: следующий Tab ведёт в его карточки. preventScroll — не сбить плавную прокрутку.
+  // preventScroll, иначе фокус сбивает плавную прокрутку
   section?.querySelector<HTMLElement>('.day-title')?.focus({ preventScroll: true })
 }
 
@@ -123,7 +120,6 @@ async function load (): Promise<void> {
   }
 }
 
-/** Сменился день — обновить «сегодня» и перечитать расписание (вышедшие серии). */
 function refreshDay (): void {
   const now = weekday()
   if (now === today.value) return
@@ -131,8 +127,7 @@ function refreshDay (): void {
   scheduleStore.load(true).catch(() => {})
 }
 
-// Таймер до полуночи (+1 с) плюс видимость/фокус окна: после сна системы или
-// троттлинга фона таймер может опоздать.
+// после сна или троттлинга фона таймер опаздывает, поэтому ещё visibilitychange и focus
 let midnightTimer: ReturnType<typeof setTimeout> | undefined
 
 function armMidnight (): void {
@@ -157,10 +152,9 @@ function stopWatchingDay (): void {
 }
 
 onMounted(load)
-// onActivated срабатывает и при первом монтировании внутри keep-alive.
+// в keep-alive onActivated срабатывает и при первом монтировании
 onActivated(() => {
   refreshDay()
-  // Свежее расписание из общего кэша (не чаще раза в 10 минут).
   scheduleStore.load().catch(() => {})
   armMidnight()
   document.addEventListener('visibilitychange', onVisibility)

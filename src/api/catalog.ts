@@ -30,7 +30,6 @@ export interface CatalogReferences {
   productionStatuses: ValueDescription[]
 }
 
-/** Каталог с фильтрами, постранично. */
 export function getCatalog (page: number, filters: CatalogFilters, limit = 30): Promise<Paginated<Release>> {
   return api<Paginated<Release>>('/anime/catalog/releases', {
     method: 'POST',
@@ -38,7 +37,6 @@ export function getCatalog (page: number, filters: CatalogFilters, limit = 30): 
   })
 }
 
-/** Все справочники для фильтров каталога одним вызовом. */
 export async function getCatalogReferences (): Promise<CatalogReferences> {
   const ref = <T>(name: string) => api<T>(`/anime/catalog/references/${name}`)
   const [genres, types, seasons, years, sorting, ageRatings, publishStatuses, productionStatuses] = await Promise.all([
@@ -54,7 +52,6 @@ export async function getCatalogReferences (): Promise<CatalogReferences> {
   return { genres, types, seasons, years, sorting, ageRatings, publishStatuses, productionStatuses }
 }
 
-/** Расписание выхода серий на неделю. */
 export function getSchedule (): Promise<ScheduleItem[]> {
   return api<ScheduleItem[]>('/anime/schedule/week')
 }

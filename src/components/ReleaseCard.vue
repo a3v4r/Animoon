@@ -1,5 +1,5 @@
 <template>
-  <!-- Имя ссылки — название, плашки и прогресс — описание: иначе диктор читает название после них. -->
+  <!-- Плашки и прогресс в описании, а не в имени ссылки: иначе диктор читает название после них -->
   <router-link
     class="card"
     :class="{ 'card--compact': compact }"
@@ -8,12 +8,10 @@
     :aria-describedby="describedBy"
   >
     <div class="poster">
-      <!-- Постер декоративный: название есть текстом. -->
       <v-img :src="poster" alt="" aspect-ratio="0.6667" cover>
         <template #placeholder><div class="placeholder" /></template>
       </v-img>
 
-      <!-- Одна плашка с приоритетом, как в макете: «Сегодня» важнее «Новая». -->
       <div :id="`${uid}-badge`" class="badges">
         <span v-if="isToday" class="badge badge--sm badge--warm">Сегодня</span>
         <span v-else-if="hasNew" class="badge badge--sm badge--accent">
@@ -22,7 +20,6 @@
         <span v-else-if="latestOrdinal != null" class="badge badge--sm badge--glass">Серия {{ latestOrdinal }}</span>
       </div>
 
-      <!-- Прогресс просмотра: «Просмотрено 3 из 9» и тонкая полоса. -->
       <template v-if="progress.watched > 0">
         <div class="shade" />
         <div :id="`${uid}-progress`" class="progress">
@@ -47,9 +44,7 @@ import { useScheduleStore } from '@/stores/schedule'
 
 const props = defineProps<{
   release: Release & { episodes?: unknown[] }
-  /** Карточка для полки: название в одну строку, без строки с типом и годом. */
   compact?: boolean
-  /** Без плашки «Сегодня»: в расписании день и так подписан. */
   noToday?: boolean
 }>()
 
@@ -70,17 +65,15 @@ const progress = computed(() => index.releaseProgress(props.release))
 const isDone = computed(() => progress.value.released != null && progress.value.watched >= progress.value.released)
 const ratio = computed(() => (progress.value.released ? Math.min(1, progress.value.watched / progress.value.released) : null))
 
-// «Новая» — только когда досмотрено всё, кроме вышедшей последней серии, а не при любом отставании.
 const hasNew = computed(() => {
   const { watched, released } = progress.value
   return released != null && watched > 0 && released - watched === 1
 })
 
-// «Сегодня» — по дню выхода из самого релиза: каталог и избранное расписание не загружают.
+// День берём из релиза: каталог и избранное расписание не грузят
 const schedule = useScheduleStore()
 const isToday = computed(() => !props.noToday && props.release.is_ongoing && props.release.publish_day?.value === schedule.today)
 
-// Только части, которые есть на карточке, чтобы не ссылаться на пустое.
 const describedBy = computed(() => [
   (isToday.value || hasNew.value || latestOrdinal.value != null) && `${uid}-badge`,
   progress.value.watched > 0 && `${uid}-progress`,
@@ -130,7 +123,7 @@ const progressText = computed(() => {
   background: var(--surface-2);
 }
 
-/* Справа: в левом верхнем углу постеров стоит водяной знак AniLibria, плашка его бы обрезала. */
+/* Справа: слева сверху на постерах водяной знак AniLibria */
 .badges {
   position: absolute;
   left: 8px;
@@ -176,7 +169,6 @@ const progressText = computed(() => {
   line-height: 20px;
 }
 
-/* Две строки под название всегда, чтобы подписи в ряду стояли на одной высоте. */
 .name.clamp-2 {
   min-height: 40px;
 }

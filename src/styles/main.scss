@@ -1,6 +1,5 @@
 @use 'fonts';
 
-// Оформление «Кинотеатр»: тёмный зал, один холодный акцент («луч проектора»), тёплый — для расписания.
 :root {
   --bg: #0b0c10;
   --surface: #15171d;
@@ -9,7 +8,7 @@
   --line-2: rgba(255, 255, 255, 0.14);
   --text: #f5f6f8;
   --text-2: #b9bcc6;
-  --text-3: #8e929d; // ≥ 4,5:1 и на --surface-2, и на #262a33 (наведение на таблетку)
+  --text-3: #8e929d; // контраст ≥ 4,5:1 на --surface-2 и на #262a33
   --accent: #5ce1e6;
   --accent-ink: #04272b;
   --accent-soft: rgba(92, 225, 230, 0.14);
@@ -21,16 +20,13 @@
   --font-display: 'Unbounded', system-ui, sans-serif;
   --font-ui: 'Onest', system-ui, sans-serif;
 
-  // Размеры каркаса окна.
   --rail-width: 64px;
   --bar-height: 56px;
 
-  // Шрифты компонентов Vuetify.
   --v-font-body: var(--font-ui);
   --v-font-heading: var(--font-ui);
 }
 
-// Общие стили: без выделения текста и перетаскивания, как в нативном приложении.
 *, *::before, *::after {
   -webkit-user-select: none;
   user-select: none;
@@ -53,8 +49,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-// Сброс стандартного вида <button> для своих кнопок (Vuetify 4 его не сбрасывает:
-// без этого браузер рисует серую заливку и выпуклую рамку).
+// Vuetify 4 не сбрасывает стили <button>
 .ui-btn {
   appearance: none;
   margin: 0;
@@ -66,7 +61,6 @@ body {
   cursor: pointer;
 }
 
-// Заголовки разделов и крупные названия — Unbounded.
 .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
@@ -93,7 +87,6 @@ body {
   -webkit-line-clamp: 3;
 }
 
-// Плашки: «Серия 9», «Новая серия», «Выйдет сегодня».
 .badge {
   display: inline-flex;
   align-items: center;
@@ -135,7 +128,6 @@ body {
   }
 }
 
-// Тонкая полоса прогресса.
 .thin-progress {
   height: 4px;
   border-radius: 2px;
@@ -163,7 +155,6 @@ body {
   background-color: #2a2d36;
 }
 
-// «Таблетка» фильтра (каталог и другие списки): «Тип: ТВ»; включённый — бирюзовый.
 .filter-chip {
   height: 36px;
   display: inline-flex;

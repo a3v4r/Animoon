@@ -15,7 +15,6 @@ defineProps<{ title: string, subtitle?: string }>()
 </script>
 
 <style scoped>
-/* Заголовок раздела «Кинотеатра»: Unbounded 28 px, рядом сводка, справа действия. */
 .page-header {
   padding: 16px 40px 0;
 }
@@ -26,7 +25,6 @@ defineProps<{ title: string, subtitle?: string }>()
   gap: 8px 16px;
 }
 
-/* Строка не переносится: длинная сводка ужимается с многоточием, действия остаются справа. */
 .title {
   flex: none;
   margin: 0;

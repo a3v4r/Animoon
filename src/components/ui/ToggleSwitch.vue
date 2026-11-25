@@ -12,7 +12,6 @@ const model = defineModel<boolean>({ default: false })
 </script>
 
 <style scoped>
-/* Переключатель «Кинотеатра» 32×18 (макет .sw-t): включён — бирюзовая обводка и бегунок. */
 .toggle {
   position: relative;
   flex: none;

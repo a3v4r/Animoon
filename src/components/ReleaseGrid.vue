@@ -5,7 +5,6 @@
     </empty-state>
 
     <v-infinite-scroll v-else :key="generation" :items="items" empty-text="" @load="onLoad">
-      <!-- Превью по наведению — одно на сетку: события ловит сама сетка, а не каждая карточка. -->
       <div class="grid" @mouseover="onGridOver" @mouseleave="onGridLeave" @focusin="hideHover">
         <release-card v-for="release in items" :key="release.id" :release="release" :data-release-id="release.id" />
       </div>
@@ -42,7 +41,6 @@ import EmptyState from './ui/EmptyState.vue'
 
 type LoadStatus = 'ok' | 'empty' | 'error'
 
-// Задержки превью: открытие как в макете (0,6 с), закрытие — чтобы курсор успел перейти на само превью.
 const OPEN_DELAY = 600
 const CLOSE_DELAY = 150
 
@@ -65,9 +63,9 @@ function onLoad (payload: { done: (status: LoadStatus) => void }): void {
 const hoverOpen = ref(false)
 const hoverRelease = shallowRef<Release | null>(null)
 const hoverTarget = shallowRef<HTMLElement>()
-let hoverCard: HTMLElement | null = null // карточка открытого превью
-let pendingCard: HTMLElement | null = null // карточка, над которой идёт задержка открытия
-let ignoredCard: HTMLElement | null = null // превью закрыли (Esc, прокрутка) — пока курсор на ней, не открываем
+let hoverCard: HTMLElement | null = null
+let pendingCard: HTMLElement | null = null
+let ignoredCard: HTMLElement | null = null
 let openTimer = 0
 let closeTimer = 0
 
@@ -79,7 +77,6 @@ function cardOf (event: Event): HTMLElement | null {
   return (event.target as Element | null)?.closest<HTMLElement>('[data-release-id]') ?? null
 }
 
-/** Курсор перешёл на другую карточку или в промежуток между ними. */
 function onGridOver (event: MouseEvent): void {
   const card = cardOf(event)
   if (hoverOpen.value) {
@@ -92,7 +89,6 @@ function onGridOver (event: MouseEvent): void {
   if (card !== ignoredCard) ignoredCard = null
   if (card === pendingCard) return
   window.clearTimeout(openTimer)
-  // Быстрое движение по сетке только переставляет таймер — превью не мигает.
   pendingCard = card && card !== ignoredCard ? card : null
   if (pendingCard) {
     const target = pendingCard
@@ -127,7 +123,6 @@ function scheduleClose (): void {
   }, CLOSE_DELAY)
 }
 
-/** Закрыть сразу и забыть ожидание: фокус с клавиатуры, уход со страницы, новый список. */
 function hideHover (): void {
   window.clearTimeout(openTimer)
   cancelClose()
@@ -136,7 +131,7 @@ function hideHover (): void {
   hoverCard = null
 }
 
-// Превью закрылось само (Esc, прокрутка, клик мимо): не открывать его снова, пока курсор на той же карточке.
+// Закрыли Esc/прокруткой: не открывать снова, пока курсор на той же карточке
 function onHoverToggle (value: boolean): void {
   if (value) return
   ignoredCard = hoverCard
@@ -145,13 +140,12 @@ function onHoverToggle (value: boolean): void {
 
 watch(() => props.generation, hideHover)
 onDeactivated(hideHover)
-// Меню закрылось само при уходе с экрана — это не «закрыли вручную».
+// При деактивации v-menu закрывается сам, это не ручное закрытие
 onActivated(() => { ignoredCard = null })
 onBeforeUnmount(hideHover)
 </script>
 
 <style scoped>
-/* Постеры «Кинотеатра»: около 7 колонок на 1280 px, между рядами больше воздуха. */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -159,11 +153,7 @@ onBeforeUnmount(hideHover)
   width: 100%;
 }
 
-/*
- * У Vuetify .v-infinite-scroll--vertical — overflow-y: auto, и он обрезает кольцо фокуса и «подъём»
- * крайних карточек. Прокручивается main, а подгрузку ловит IntersectionObserver с root = null (окно),
- * scrollTop самого компонента нужен только для side="start" — поэтому overflow можно отключить.
- */
+/* overflow от Vuetify режет фокус и подъём крайних карточек; подгрузку ловит IO с root = окно */
 .release-grid :deep(.v-infinite-scroll) {
   overflow: visible;
 }

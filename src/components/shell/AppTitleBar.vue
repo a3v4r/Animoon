@@ -28,20 +28,18 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppNotifications from '@/components/AppNotifications.vue'
 import AppSearch from '@/components/AppSearch.vue'
-// ?no-inline: иначе Vite вставит маленький SVG как data:, а CSP (img-src) data: не пускает.
+// ?no-inline: иначе Vite заинлайнит SVG как data:, а CSP img-src data: не пускает
 import markUrl from '@/assets/brand/mark.svg?no-inline'
 import { isTauri } from '@/utils/window'
 import WindowControls from './WindowControls.vue'
 
-/** solid — сплошной фон; иначе панель прозрачная поверх афиши. */
 defineProps<{ solid: boolean }>()
 
 const router = useRouter()
 const route = useRoute()
 
-// «Назад» — когда есть куда возвращаться и мы не на главной.
 const historyState = ref(window.history.state as { back?: unknown } | null)
-// Панель пересоздаётся при выходе из полноэкранного плеера: хук снимается вместе с ней.
+// Панель пересоздаётся после полноэкранного плеера, хук снимается вместе с ней
 const removeAfterEach = router.afterEach(() => { historyState.value = window.history.state })
 const canGoBack = computed(() => route.name !== 'releases' && historyState.value?.back != null)
 
@@ -61,7 +59,6 @@ onBeforeUnmount(removeAfterEach)
   gap: 8px;
 }
 
-/* Прозрачная панель: затемнение сверху, чтобы кнопки читались на светлых кадрах. */
 .bar::before {
   content: '';
   position: absolute;
@@ -91,7 +88,6 @@ onBeforeUnmount(removeAfterEach)
   white-space: nowrap;
 }
 
-/* Знак стоит над колонкой разделов, по её центру. */
 .brand-cell {
   width: var(--rail-width);
   height: var(--bar-height);
@@ -142,7 +138,6 @@ button:focus-visible {
   outline-offset: -2px;
 }
 
-/* Узкое окно: название приложения прячется, остаётся знак. */
 @media (max-width: 1100px) {
   .brand-name {
     display: none;

@@ -52,7 +52,6 @@ function isActive (name: string): boolean {
   return route.name === name
 }
 
-// Клик по уже открытому разделу не переходит, а просит прокрутить его наверх.
 function onClick (e: MouseEvent, name: string, navigate: (e?: MouseEvent) => unknown): void {
   if (isActive(name)) {
     e.preventDefault()
@@ -109,7 +108,6 @@ function onClick (e: MouseEvent, name: string, navigate: (e?: MouseEvent) => unk
   background: var(--accent-soft);
 }
 
-/* Метка активного раздела у края колонки. */
 .rail-item--active::before {
   content: '';
   position: absolute;

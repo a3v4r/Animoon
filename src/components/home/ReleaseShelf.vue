@@ -10,7 +10,7 @@
       <button v-show="canScrollLeft" class="ui-btn nav nav--left" title="Назад" aria-label="Прокрутить назад" @click="scrollBy(-1)">
         <v-icon icon="mdi-chevron-left" size="28" />
       </button>
-      <!-- Колесо мыши прокручивает страницу; полку листают стрелки, Shift + колесо или жест тачпада. -->
+      <!-- Колесо не перехватываем: полку листают стрелки, Shift + колесо и тачпад -->
       <div ref="strip" class="strip" @scroll.passive="updateArrows">
         <div v-for="release in releases" :key="release.id" class="item">
           <release-card compact :release="release" />
@@ -52,7 +52,6 @@ function updateArrows (): void {
   canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 4
 }
 
-/** Прокрутить на ширину видимой части. */
 function scrollBy (direction: 1 | -1): void {
   const el = strip.value
   if (el) el.scrollBy({ left: direction * el.clientWidth * 0.85, behavior: 'smooth' })
@@ -63,7 +62,6 @@ watch(() => props.releases.length, async () => {
   updateArrows()
 })
 
-// Стрелки пересчитываются при любом изменении размера полки (окно, колонка разделов).
 const observer = new ResizeObserver(updateArrows)
 onMounted(() => {
   if (strip.value) observer.observe(strip.value)
@@ -71,7 +69,6 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer.disconnect())
 
-// Главная живёт между переходами: вернуть полку на прежнее место.
 onDeactivated(() => { savedScroll = strip.value?.scrollLeft ?? 0 })
 onActivated(async () => {
   await nextTick()
@@ -81,7 +78,6 @@ onActivated(async () => {
 </script>
 
 <style scoped>
-/* Размеры карточки в одном месте: от них зависят высота плитки «Все» и стрелок. */
 .shelf {
   --card-w: 136px;
   --poster-h: calc(var(--card-w) * 1.5);
@@ -164,7 +160,6 @@ onActivated(async () => {
   background: var(--surface-2);
 }
 
-/* Стрелки по краям полки поверх постеров. */
 .nav {
   position: absolute;
   top: 0;

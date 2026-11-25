@@ -45,7 +45,6 @@ defineOptions({ name: 'ReleasesView' })
 
 const DAY_NAMES = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье']
 const HERO_SIZE = 5
-// Главную можно оставить открытой надолго: при возвращении обновить, если данные старше 10 минут.
 const STALE_MS = 10 * 60 * 1000
 
 const account = useAccountStore()
@@ -54,7 +53,6 @@ const releases = useReleasesStore()
 const scheduleStore = useScheduleStore()
 
 const latest = ref<Release[]>([])
-// Расписание общее с другими экранами (стор): один запрос и один источник «выйдет сегодня».
 const schedule = computed(() => scheduleStore.items)
 const loading = ref(false)
 const error = ref('')
@@ -62,11 +60,10 @@ const heroIndex = ref(0)
 let loadedAt = 0
 
 const dayOf = weekday
-// День — ref, а не computed: иначе после полуночи «Сегодня» показывал бы вчерашний день.
+// ref, а не computed: Date не реактивен, после полуночи день остался бы вчерашним
 const today = ref(dayOf())
 const dayName = computed(() => DAY_NAMES[today.value - 1])
 
-/** Наступил другой день — обновить день и данные (вышедшие сегодня серии тоже изменились). */
 function syncDay (): boolean {
   const day = dayOf()
   if (day === today.value) return false
@@ -75,13 +72,11 @@ function syncDay (): boolean {
   return true
 }
 
-/** Смотрит ли пользователь релиз: начал и не досмотрел все вышедшие серии. */
 function isInProgress (release: Release): boolean {
   const p = index.releaseProgress(release)
   return p.watched > 0 && (p.released == null || p.watched < p.released)
 }
 
-/** «Серия 10 выйдет сегодня» по расписанию. */
 const airsTodayById = computed(() => {
   const map = new Map<number, string>()
   for (const entry of schedule.value) {
@@ -91,7 +86,6 @@ const airsTodayById = computed(() => {
   return map
 })
 
-// Афиша: сначала то, что пользователь смотрит и где вышли новые серии, затем просто свежие серии.
 const heroItems = computed<HeroItem[]>(() => {
   const started = latest.value.filter(isInProgress)
   const fresh = latest.value.filter(r => !started.includes(r) && r.latest_episode)
@@ -106,14 +100,12 @@ const heroItems = computed<HeroItem[]>(() => {
 
 const hasStarted = computed(() => latest.value.some(isInProgress))
 
-// Полка: начатые первыми; релиз с афиши на полке не повторяется.
 const shelfReleases = computed(() => {
   const current = heroItems.value[heroIndex.value]?.release.id
   const rest = latest.value.filter(r => r.id !== current)
   return [...rest.filter(isInProgress), ...rest.filter(r => !isInProgress(r))]
 })
 
-// Сегодня по расписанию: свои (избранное и начатые) первыми.
 const todayItems = computed(() => {
   const own = (entry: ScheduleItem) => account.isFavorite(entry.release.id) || index.releaseProgress(entry.release).watched > 0
   const list = schedule.value.filter(entry => entry.release.publish_day?.value === today.value)
@@ -137,10 +129,7 @@ async function load (): Promise<void> {
   }
 }
 
-/**
- * У начатых релизов, где в ленте серия новее, чем знает приложение, перечитать полную карточку:
- * так обновится число вышедших серий для «N из M» и «Новая серия». Не больше 5 за раз.
- */
+// в ленте серия новее известной: перечитываем карточку, иначе "N из M" устареет
 function refreshStale (): void {
   latest.value
     .filter(r => index.isStale(r) && index.releaseProgress(r).watched > 0)
@@ -152,7 +141,6 @@ function isTyping (target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || target.matches('input, textarea, select'))
 }
 
-// ←/→ листают афишу, пока главная открыта (экран остаётся в памяти между переходами).
 function onKey (event: KeyboardEvent): void {
   if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return
   const count = heroItems.value.length
@@ -162,7 +150,6 @@ function onKey (event: KeyboardEvent): void {
 }
 
 onMounted(load)
-// Главная может быть открыта через полночь: раз в минуту проверить, не сменился ли день.
 let dayTimer: number | undefined
 
 onActivated(() => {

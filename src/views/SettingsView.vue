@@ -159,14 +159,12 @@ const scales: { title: string, value: UiScale }[] = [
   { title: '150%', value: 1.5 },
   { title: '175%', value: 1.75 }
 ]
-// Выбрали явный масштаб, а окно слишком маленькое для него — подскажем.
 const scaleLimited = computed(() => settings.uiScale !== 'auto' && effectiveScale.value < settings.uiScale)
 
 const updater = useUpdaterStore()
 const updateTitle = computed(() => updater.status === 'available' || updater.busy
   ? `Доступна версия ${updater.version}`
   : `Установлена версия ${version.value || '—'}`)
-// Без процентов: строка не живая область, но и мелькать ей незачем.
 const updateText = computed(() => {
   if (updater.installError && (updater.status === 'available' || updater.status === 'ready')) {
     return `Не удалось обновиться: ${updater.installError}.`
@@ -208,7 +206,7 @@ const avatar = computed(() => {
 async function logout (): Promise<void> {
   loggingOut.value = true
   try {
-    // Сначала отправить тайм-коды из очереди, пока токен ещё действует.
+    // сначала тайм-коды из очереди, пока токен ещё действует
     await progress.flush()
     await account.logout()
   } finally {

@@ -1,5 +1,4 @@
-// Типы ответов AniLibria API v1. Описаны только поля, которые использует приложение;
-// полная схема — docs/api-v1.json.
+// Только используемые поля, полная схема в docs/api-v1.json
 
 export interface ValueDescription<T = string> {
   value: T
@@ -101,7 +100,7 @@ export interface Profile {
   avatar: Image | null
 }
 
-/** Тайм-код просмотра: [id серии, секунда, досмотрена]. */
+// [id серии, секунда, досмотрена]
 export type Timecode = [string, number, boolean]
 
 export interface AppStatus {

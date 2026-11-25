@@ -3,11 +3,6 @@ import type { Paginated } from '@/api/types'
 
 type LoadStatus = 'ok' | 'empty' | 'error'
 
-/**
- * Постраничная загрузка для v-infinite-scroll.
- * reset() очищает список и меняет key, чтобы v-infinite-scroll начал заново.
- * total после reset() держит прежнее число (stale = true), пока не ответит первая страница.
- */
 export function useInfiniteList<T extends { id: number }> (fetchPage: (page: number) => Promise<Paginated<T>>) {
   const items = ref<T[]>([]) as { value: T[] }
   const error = ref('')
@@ -30,7 +25,7 @@ export function useInfiniteList<T extends { id: number }> (fetchPage: (page: num
       done(meta.pagination.current_page >= meta.pagination.total_pages ? 'empty' : 'ok')
     } catch (e) {
       if (requested !== generation.value) return
-      // Первая страница не пришла — старое число к новым условиям не относится.
+      // первая страница не пришла: старый total к новому запросу не относится
       if (page === 1) total.value = null
       stale.value = false
       error.value = e instanceof Error ? e.message : String(e)

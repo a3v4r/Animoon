@@ -1,6 +1,5 @@
 <template>
   <section class="hero">
-    <!-- Кадр серии справа, растворяется к тексту и вниз. -->
     <div class="art">
       <div class="art-fade">
         <transition name="fade">
@@ -66,7 +65,7 @@
       </div>
     </div>
 
-    <!-- Переключатель подборки: видимая точка маленькая, зона нажатия — вся кнопка. -->
+    <!-- Точка маленькая, зона нажатия - вся кнопка -->
     <div v-if="items.length > 1" class="dots" role="tablist" aria-label="Подборка">
       <button
         v-for="(entry, i) in items"
@@ -97,9 +96,7 @@ import { formatDuration } from '@/utils/time'
 
 export interface HeroItem {
   release: Release
-  /** continue — пользователь смотрит релиз и есть непросмотренные серии; fresh — просто новая серия. */
   mode: 'continue' | 'fresh'
-  /** «Серия 10 выйдет сегодня», если по расписанию сегодня. */
   airsToday: string | null
 }
 
@@ -112,15 +109,13 @@ const progress = useProgressStore()
 const releases = useReleasesStore()
 
 const item = computed<HeroItem | undefined>(() => props.items[props.modelValue])
-// Полная карточка релиза: нужна, чтобы найти следующую непросмотренную серию и её кадр.
 const full = ref<ReleaseFull | null>(null)
 const fullFailed = ref(false)
 const favoriteLoading = ref(false)
 
 const releaseRoute = computed<RouteLocationRaw>(() => ({ name: 'release', params: { id: item.value?.release.id ?? 0 } }))
 
-// Следим только за релизом и режимом: пересчёт списка (новые объекты HeroItem) не должен
-// сбрасывать уже загруженную карточку.
+// Не весь item: новые объекты HeroItem при пересчёте списка сбросили бы загруженную карточку
 watch(
   () => [item.value?.release.id, item.value?.mode] as const,
   async ([id, mode]) => {
@@ -141,19 +136,14 @@ watch(
 )
 
 const isContinue = computed(() => item.value?.mode === 'continue')
-// Карточка ещё грузится — кнопку «Смотреть» показываем с индикатором, а не прячем.
 const waitingFull = computed(() => isContinue.value && !full.value && !fullFailed.value)
 
-/** Следующая непросмотренная серия: её и предлагаем, и её кадр показываем (без спойлеров). */
 const nextEpisode = computed<Episode | null>(() => {
   if (!isContinue.value || !full.value || full.value.id !== item.value?.release.id) return null
   return nextEpisodeToWatch(full.value.episodes, progress.get)
 })
 
-/**
- * Какой кадр нужен. В режиме continue кадр последней серии не показываем никогда (спойлер):
- * только кадр следующей непросмотренной, а пока её не знаем или карточка не загрузилась — постер.
- */
+// В continue кадр последней серии не показываем: спойлер
 const targetFrame = computed<Frame | null>(() => {
   const current = item.value
   if (!current) return null
@@ -178,7 +168,6 @@ const progressInfo = computed(() => {
   return { watched: p.watched, released: p.released, ratio: Math.min(1, p.watched / p.released) }
 })
 
-/** Место остановки в следующей серии, если её начали. */
 const resume = computed(() => {
   const episode = nextEpisode.value
   if (!episode?.duration) return null
@@ -186,7 +175,6 @@ const resume = computed(() => {
   return saved && !saved.watched && saved.time > 10 ? { time: saved.time, duration: episode.duration } : null
 })
 
-// Куда ведёт «Смотреть»: на серию, а если её не узнать (нет сети) — на страницу релиза.
 const watchTarget = computed<RouteLocationRaw>(() => {
   const current = item.value
   if (!current) return releaseRoute.value
@@ -217,7 +205,6 @@ async function toggleFavorite (): Promise<void> {
 </script>
 
 <style scoped>
-/* Афиша растёт под длинное название, текст прижат к низу; сверху место под панель окна. */
 .hero {
   position: relative;
   display: flex;
@@ -228,7 +215,6 @@ async function toggleFavorite (): Promise<void> {
   isolation: isolate;
 }
 
-/* Тёплое свечение зала за кадром. */
 .hero::before {
   content: '';
   position: absolute;
@@ -267,7 +253,6 @@ async function toggleFavorite (): Promise<void> {
   transform-origin: 60% 40%;
 }
 
-/* Медленный наезд камеры: один проход на кадр (элемент пересоздаётся при смене кадра), потом покой. */
 @media (prefers-reduced-motion: no-preference) {
   .art-img {
     animation: ken-burns 24s ease-out 1 forwards;
@@ -289,7 +274,6 @@ async function toggleFavorite (): Promise<void> {
   opacity: 0;
 }
 
-/* Затемнение под текстом слева, чтобы текст читался на светлых кадрах. */
 .scrim {
   position: absolute;
   inset: 0;
@@ -301,7 +285,6 @@ async function toggleFavorite (): Promise<void> {
 }
 
 .body {
-  /* На узком окне текст не выходит за затемнение. */
   width: min(560px, 46%);
   min-width: 360px;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
@@ -410,7 +393,6 @@ async function toggleFavorite (): Promise<void> {
   padding: 0 !important;
 }
 
-/* Узкое окно: у длинной кнопки остаётся только иконка (подпись — во всплывающей подсказке). */
 @media (max-width: 1100px) {
   .action--collapsible {
     width: 44px;

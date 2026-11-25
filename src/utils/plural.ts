@@ -1,4 +1,3 @@
-/** Русское склонение по числу: pluralize(5, ['серия', 'серии', 'серий']) → 'серий'. */
 export function pluralize (count: number, forms: [string, string, string]): string {
   const n = Math.abs(count) % 100
   const last = n % 10

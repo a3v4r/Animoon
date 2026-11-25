@@ -14,7 +14,6 @@
     </div>
 
     <template v-else-if="release">
-      <!-- Шапка: кадр следующей к просмотру серии, слева описание, справа факты. -->
       <section class="hero">
         <div class="art">
           <div class="art-fade">
@@ -32,7 +31,6 @@
             </template>
           </div>
 
-          <!-- Название не обрезается: длинные набираются мельче. -->
           <h1 class="title font-display allow-select" :class="{ 'title--long': release.name.main.length > 50 }">
             {{ release.name.main }}
           </h1>
@@ -114,7 +112,6 @@
         </dl>
       </section>
 
-      <!-- Серии. -->
       <section class="episodes">
         <header class="episodes-head">
           <h2 class="font-display">Серии</h2>
@@ -171,7 +168,7 @@
         </div>
 
         <div v-else class="list">
-          <!-- Строка: ссылка на серию и рядом, а не внутри неё, кнопка отметки. -->
+          <!-- кнопка рядом со ссылкой, а не внутри: вложенные интерактивные элементы невалидны -->
           <div
             v-for="episode in visibleEpisodes"
             :key="episode.id"
@@ -233,7 +230,6 @@ const error = ref('')
 const favoriteLoading = ref(false)
 const descriptionOpen = ref(false)
 
-// Вид списка серий запоминается для всех релизов.
 const prefs = reactive({
   hideWatched: false,
   order: 'asc' as 'asc' | 'desc',
@@ -247,16 +243,12 @@ const watchedCount = computed(() => episodes.value.filter(e => progress.get(e.id
 const allWatched = computed(() => episodes.value.length > 0 && watchedCount.value >= episodes.value.length)
 const isFavorite = computed(() => release.value != null && account.isFavorite(release.value.id))
 
-/** Серия, которую смотреть дальше: первая непросмотренная по порядку (то же правило, что на главной). */
 const continueEpisode = computed(() => nextEpisodeToWatch(episodes.value, progress.get))
 
-/** Релиз начат: есть просмотренная или начатая серия (снятая отметка или открытая на секунду не в счёт). */
 const started = computed(() => episodes.value.some(e => hasMeaningfulProgress(progress.get(e.id))))
 
-/** Что включает главная кнопка: следующую серию, а если всё просмотрено — первую (пересмотреть). */
 const playEpisode = computed<Episode | null>(() => (allWatched.value ? episodes.value[0] ?? null : continueEpisode.value))
 
-/** Позиция, с которой продолжить серию. */
 const resume = computed(() => {
   const episode = continueEpisode.value
   const saved = episode ? progress.get(episode.id) : undefined
@@ -284,7 +276,7 @@ const progressInfo = computed(() => {
   return { watched: watchedCount.value, released, ratio: Math.min(1, watchedCount.value / released) }
 })
 
-/** Состояние каждой серии одним проходом (а не вызовом функции на каждую привязку в шаблоне). */
+// одним проходом, а не функцией на каждую привязку в шаблоне
 const states = computed(() => {
   const map = new Map<string, 'seen' | 'current' | 'other'>()
   const currentId = started.value ? continueEpisode.value?.id : undefined
@@ -294,8 +286,7 @@ const states = computed(() => {
   return map
 })
 
-// Фон — кадр серии, которую смотреть дальше (без спойлеров): если всё просмотрено — первой;
-// у анонса без серий — постер.
+// кадр следующей серии, а не последней вышедшей: без спойлеров
 const frame = useProgressiveFrame(computed(() => {
   if (!release.value) return null
   return episodeFrame(continueEpisode.value ?? episodes.value[0]) ?? posterFrame(release.value)
@@ -312,8 +303,6 @@ const eyebrow = computed(() => {
   ].filter((part): part is string => Boolean(part))
 })
 
-// «Серия 9 вышла сегодня» / «Серия 10 — сегодня» — по расписанию, как на главной.
-// Если расписание не загрузилось, плашки нет: лучше промолчать, чем гадать.
 const airs = computed(() => {
   const r = release.value
   if (!r) return null
@@ -349,8 +338,7 @@ const episodesCount = computed(() => {
   return r.episodes_total ? `${episodes.value.length} из ${r.episodes_total}` : `${episodes.value.length}`
 })
 
-// Отмеченные при включённом «Скрыть просмотренные» не исчезают из-под курсора,
-// пока фильтр не переключат заново.
+// отмеченные при скрытии просмотренных не пропадают из-под курсора до переключения фильтра
 const keptVisible = reactive(new Set<string>())
 watch(() => prefs.hideWatched, () => keptVisible.clear())
 
@@ -361,7 +349,6 @@ const visibleEpisodes = computed(() => {
   return prefs.order === 'asc' ? list : [...list].reverse()
 })
 
-// «Читать полностью» — только если описание действительно обрезано.
 const descriptionEl = ref<HTMLElement | null>(null)
 const descriptionOverflows = ref(false)
 function measureDescription (): void {
@@ -427,11 +414,10 @@ onMounted(() => {
   if (!release.value) {
     void load()
   } else {
-    // Карточка из кэша показана сразу; тихо перечитать её — у онгоинга могли выйти серии.
+    // из кэша показали сразу, перечитываем тихо: у онгоинга могли выйти серии
     releases.load(props.id, true).then(r => { release.value = r }).catch(() => undefined)
   }
   void schedule.load().catch(() => undefined)
-  // Подтянуть просмотры с сайта, чтобы отметки серий были свежими.
   void progress.sync(false)
 })
 </script>
@@ -448,7 +434,6 @@ onMounted(() => {
   padding: calc(var(--bar-height) + 48px) 24px 48px;
 }
 
-/* ---------- шапка ---------- */
 .hero {
   position: relative;
   display: flex;
@@ -459,7 +444,6 @@ onMounted(() => {
   isolation: isolate;
 }
 
-/* Холодное свечение за кадром (на главной — тёплое). */
 .hero::before {
   content: '';
   position: absolute;
@@ -519,7 +503,6 @@ onMounted(() => {
   mask-image: linear-gradient(180deg, #000 70%, transparent);
 }
 
-/* Узкое окно: текст занимает больше ширины, затемнение тянется дальше вправо. */
 @media (max-width: 1180px) {
   .scrim {
     background: linear-gradient(90deg, rgba(11, 12, 16, 0.94) 0, rgba(11, 12, 16, 0.84) 58%, rgba(11, 12, 16, 0.2) 92%);
@@ -666,7 +649,6 @@ onMounted(() => {
   color: var(--accent) !important;
 }
 
-/* Стеклянная панель фактов справа. */
 .facts {
   flex: 0 0 300px;
   margin: 0 0 4px auto;
@@ -705,7 +687,6 @@ onMounted(() => {
   overflow-wrap: anywhere;
 }
 
-/* Узкое окно: шапка остаётся в ряд, факты уже — серии видны на первом экране. */
 @media (max-width: 1180px) {
   .hero {
     gap: 24px;
@@ -720,7 +701,6 @@ onMounted(() => {
   }
 }
 
-/* ---------- серии ---------- */
 .episodes {
   padding: 8px 40px 0;
 }

@@ -1,5 +1,5 @@
 <template>
-  <!-- Ссылка растянута на всю карточку, кнопка отметки — соседний элемент, а не вложенный в ссылку. -->
+  <!-- Кнопка отметки - сосед ссылки, а не внутри: интерактив внутри <a> недопустим -->
   <div class="episode" :class="{ 'episode--seen': state === 'seen', 'episode--current': state === 'current' }">
     <div class="preview" aria-hidden="true">
       <img v-if="thumb" :src="thumb" alt="" loading="lazy">
@@ -43,7 +43,6 @@ import { formatDuration } from '@/utils/time'
 const props = defineProps<{
   episode: Episode
   progress: EpisodeProgress | undefined
-  /** seen — просмотрена; current — следующая к просмотру; other — остальные. */
   state: 'seen' | 'current' | 'other'
 }>()
 
@@ -68,7 +67,6 @@ const progressRatio = computed(() => {
   return Math.min(1, p.time / props.episode.duration)
 })
 
-/** Состояние словами — для экранного диктора (на экране это плашки на кадре). */
 const statusText = computed(() => {
   if (props.state === 'seen') return 'просмотрена'
   if (props.state === 'current') return resumeTime.value ? `следующая, продолжить с ${resumeTime.value}` : 'следующая'
@@ -102,12 +100,10 @@ const statusText = computed(() => {
   filter: brightness(0.55) saturate(0.8);
 }
 
-/* Акцентная рамка — только у серии, которую смотреть дальше. */
 .episode--current .preview {
   box-shadow: 0 0 0 2px var(--accent);
 }
 
-/* Наведение — нейтральная рамка и подъём, чтобы не путать с текущей серией. */
 .episode:hover .preview {
   transform: translateY(-2px);
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 12px 28px rgba(0, 0, 0, 0.45);
@@ -117,7 +113,6 @@ const statusText = computed(() => {
   box-shadow: 0 0 0 2px var(--accent), 0 12px 28px rgba(0, 0, 0, 0.45);
 }
 
-/* Фокус с клавиатуры — двойное кольцо, отличное и от наведения, и от текущей серии. */
 .episode:has(.link:focus-visible) .preview {
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text);
 }
@@ -174,7 +169,6 @@ const statusText = computed(() => {
   outline: none;
 }
 
-/* Вся карточка — зона нажатия ссылки. */
 .link::after {
   content: '';
   position: absolute;
@@ -203,7 +197,6 @@ const statusText = computed(() => {
   color: var(--text-2);
 }
 
-/* Отметка просмотра: поверх ссылки, видна при наведении, у просмотренных — всегда. */
 .toggle {
   position: absolute;
   z-index: 2;

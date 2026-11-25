@@ -1,5 +1,5 @@
 <template>
-  <!-- Живая область смонтирована всегда: диктор объявляет только изменения внутри уже существующей области. -->
+  <!-- Живая область смонтирована всегда: диктор объявляет только изменения в уже существующей -->
   <div class="d-sr-only" role="status" aria-live="polite">{{ announcement }}</div>
 
   <transition name="slide">
@@ -37,13 +37,12 @@
 import { computed, nextTick, ref } from 'vue'
 import { useUpdaterStore } from '@/stores/updater'
 
-/** В плеере плашку не показываем, но живая область остаётся смонтированной. */
 defineProps<{ hidePlaque?: boolean }>()
 
 const updater = useUpdaterStore()
 const titleEl = ref<HTMLElement | null>(null)
 
-/** После нажатия кнопка пропадает (меняется состояние) — фокус переводим на заголовок плашки, а не в никуда. */
+/** Кнопка исчезает после нажатия, фокус уводим на заголовок, а не в никуда */
 function act (action: () => Promise<void>): void {
   const promise = action()
   void nextTick(() => {
@@ -73,7 +72,6 @@ const sub = computed(() => {
   }
 })
 
-// Для диктора — только смены состояния, без процентов.
 const announcement = computed(() => {
   if (!updater.showBanner) return ''
   return updater.installError ? `${title.value}. ${sub.value}` : title.value
@@ -81,7 +79,6 @@ const announcement = computed(() => {
 </script>
 
 <style scoped>
-/* Плашка в правом нижнем углу, поверх содержимого; в плеере не показывается (App.vue). */
 .update {
   position: fixed;
   right: 24px;

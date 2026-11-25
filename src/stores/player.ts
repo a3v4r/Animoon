@@ -17,10 +17,7 @@ function readVolume (): number {
   return Number.isFinite(saved) && saved > 0 && saved <= 1 ? saved : 1
 }
 
-/**
- * Настройки плеера, которые переживают перезапуск и смену серии, и полноэкранный режим.
- * volume — последняя ненулевая громкость (к ней возвращается «Включить звук»).
- */
+// volume - последняя ненулевая громкость, к ней возвращает «Включить звук»
 export const usePlayerStore = defineStore('player', () => {
   const quality = ref<Quality>(readQuality())
   const volume = ref(readVolume())

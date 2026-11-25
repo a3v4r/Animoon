@@ -1,8 +1,5 @@
 <template>
-  <!--
-    Превью релиза по наведению (каталог). Открывает и закрывает сетка: один экземпляр на всю сетку.
-    Фокус не перехватывает — это дополнение для мыши, клавиатура ходит по карточкам как раньше.
-  -->
+  <!-- Только для мыши: фокус не забирает, клавиатура ходит по карточкам -->
   <v-menu
     :model-value="modelValue"
     :target="target"
@@ -13,7 +10,7 @@
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div v-if="release" class="hover-card" @mouseenter="emit('enter')" @mouseleave="emit('leave')">
-      <!-- Кадра в ответе каталога нет — постер; ссылка дублирует название, поэтому скрыта от диктора. -->
+      <!-- Ссылка дублирует название, поэтому скрыта от диктора -->
       <router-link class="frame" :to="releaseRoute" tabindex="-1" aria-hidden="true">
         <img :src="poster" alt="">
         <div class="badges">
@@ -72,7 +69,6 @@ import { nextEpisodeToWatch } from '@/utils/episodes'
 const props = defineProps<{
   modelValue: boolean
   release: Release | null
-  /** Постер карточки, над которым встаёт превью. */
   target?: HTMLElement
 }>()
 
@@ -99,7 +95,6 @@ const poster = computed(() => {
 const schedule = useScheduleStore()
 const isToday = computed(() => !!props.release?.is_ongoing && props.release.publish_day?.value === schedule.today)
 
-// «ТВ · Осень 2026 · 24 мин · 16+», как в макете.
 const meta = computed(() => {
   const r = props.release
   if (!r) return ''
@@ -113,7 +108,7 @@ const meta = computed(() => {
 
 const genres = computed(() => props.release?.genres?.map(g => g.name).join(' · ') ?? '')
 
-// Числа вышедших серий в ответе каталога нет: берём справочник, а он — номер последней серии.
+// В ответе каталога нет числа вышедших серий, берём номер последней из справочника
 const released = computed(() => {
   const r = props.release
   if (!r) return null
@@ -124,7 +119,6 @@ const released = computed(() => {
   return null
 })
 
-// Следующая серия известна, только когда релиз загружен целиком; иначе «Смотреть» ведёт на страницу релиза.
 const nextEpisode = computed(() => {
   const full = props.release ? releases.peek(props.release.id) : null
   return full ? nextEpisodeToWatch(full.episodes, progress.get) : null
@@ -136,7 +130,6 @@ const watchTarget = computed<RouteLocationRaw>(() => (props.release && nextEpiso
 
 const watchTitle = computed(() => (nextEpisode.value ? `Смотреть серию ${nextEpisode.value.ordinal}` : 'Открыть релиз'))
 
-// Пока превью открыто, догружаем релиз целиком (кэш на 10 минут), чтобы «Смотреть» вело на нужную серию.
 watch(() => (props.modelValue ? props.release?.id : undefined), id => {
   if (id != null) releases.load(id).catch(() => {})
 }, { immediate: true })
@@ -155,7 +148,6 @@ async function toggleFavorite (): Promise<void> {
 </script>
 
 <style scoped>
-/* Как .hov в макете: 264 px, кадр сверху растворяется в поверхность. */
 .hover-card {
   width: 264px;
   border-radius: 14px;
@@ -255,7 +247,6 @@ async function toggleFavorite (): Promise<void> {
   margin-top: 16px;
 }
 
-/* Кнопки как .btn.sm в макете: 36 px, иконка 18 px. */
 .act {
   height: 36px;
   display: inline-flex;

@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
-    // 127.0.0.1, а не localhost: Node на Windows резолвит localhost в ::1, а Tauri ждёт IPv4.
+    // не localhost: Node на Windows резолвит его в ::1, а Tauri ждёт IPv4
     host: host || '127.0.0.1',
     hmr: host ? { protocol: 'ws', host, port: 1421 } : undefined,
     watch: { ignored: ['**/src-tauri/**'] }

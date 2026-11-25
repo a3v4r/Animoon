@@ -31,7 +31,6 @@
     </span>
     <div class="thumb" :style="{ left: percent(dragTime ?? current) }" />
 
-    <!-- Подсказка: время под курсором, а над отметкой — что это и как пропустить. -->
     <div v-if="hover != null" class="tooltip" :class="tooltipAlign" :style="{ left: percent(hover) }">
       <template v-if="hoverMark">
         <b>{{ hoverMark.kind === 'opening' ? 'Опенинг' : 'Эндинг' }}</b>
@@ -57,15 +56,13 @@ const props = defineProps<{
   current: number
   duration: number
   buffered: number
-  /** Отрезки опенинга и эндинга, подсвечиваются на полосе. */
   marks: SeekMark[]
 }>()
 
 const emit = defineEmits<{ seek: [time: number] }>()
 
 const bar = ref<HTMLElement | null>(null)
-// Пока полоса в фокусе, значение для экранного диктора не меняется с каждой секундой видео,
-// а только при перемотке — иначе диктор озвучивает время непрерывно.
+// В фокусе aria-значение меняется только при перемотке, иначе диктор читает время без конца
 const focused = ref(false)
 const frozenTime = ref(0)
 const ariaTime = computed(() => (focused.value ? frozenTime.value : props.current))
@@ -89,7 +86,6 @@ const hoverMark = computed(() => {
   return time == null ? undefined : props.marks.find(m => time >= m.start && time <= m.stop)
 })
 
-// У краёв полосы подсказка прижимается к краю, чтобы не обрезалась окном.
 const tooltipAlign = computed(() => {
   if (hover.value == null || !props.duration) return ''
   const ratio = hover.value / props.duration
@@ -132,8 +128,7 @@ function startDrag (event: MouseEvent): void {
   window.addEventListener('mouseup', stopDrag)
 }
 
-// С клавиатуры полоса работает как ползунок: стрелки — по 5 с, Home/End — в начало и конец.
-// Событие не всплывает, чтобы плеер не перемотал второй раз.
+// stopPropagation: иначе плеер перемотает второй раз
 function onKeydown (event: KeyboardEvent): void {
   const step = { ArrowLeft: -5, ArrowRight: 5, PageDown: -30, PageUp: 30 }[event.key]
   if (step != null) seekTo(ariaTime.value + step)
@@ -193,7 +188,6 @@ onBeforeUnmount(() => {
   background: var(--accent);
 }
 
-/* Опенинг и эндинг — тёплым, с зазорами по краям, чтобы читались поверх просмотренной части. */
 .mark {
   background: var(--warm);
   border-radius: 0;

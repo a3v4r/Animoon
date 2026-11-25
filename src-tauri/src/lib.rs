@@ -4,10 +4,8 @@ use tauri::Manager;
 pub fn run() {
     let mut builder = tauri::Builder::default().plugin(tauri_plugin_process::init());
 
-    // Второй запуск не открывает новое окно, а показывает уже открытое.
     #[cfg(desktop)]
     {
-        // Обновления — только на компьютере: плагин подключён для десктопных целей (Cargo.toml).
         builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
@@ -19,8 +17,7 @@ pub fn run() {
     }
 
     builder
-        // Размер и положение окна запоминаются, полный экран — нет: он нужен только в плеере,
-        // и окно не должно открываться полноэкранным, когда приложение об этом не знает.
+        // без FULLSCREEN, иначе окно может открыться полноэкранным вне плеера
         .plugin(
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(

@@ -1,5 +1,5 @@
 <template>
-  <!-- Отдельный компонент: плеер перерисовывается на каждый кадр, а список — только при смене серии или отметок. -->
+  <!-- Отдельный компонент, чтобы список не перерисовывался с каждым кадром плеера -->
   <aside ref="root" class="episodes" aria-label="Серии" @keydown.esc.stop="emit('close')">
     <header class="head">
       <b class="font-display">Серии</b>
@@ -42,7 +42,6 @@ import { useProgressStore } from '@/stores/progress'
 const props = defineProps<{
   episodes: Episode[]
   currentId: string | undefined
-  /** Открыт с клавиатуры — перевести фокус на текущую серию. */
   focusOnOpen: boolean
 }>()
 
@@ -57,14 +56,12 @@ function thumbOf (item: Episode): string {
   return mediaUrl(preview?.optimized?.thumbnail ?? preview?.thumbnail ?? preview?.optimized?.preview)
 }
 
-/** Фокус внутри списка — тогда при закрытии его надо вернуть на кнопку списка. */
 function containsFocus (): boolean {
   return root.value?.contains(document.activeElement) ?? false
 }
 
 defineExpose({ containsFocus })
 
-// Открыли — прокрутить к текущей серии (и поставить на неё фокус, если открыли с клавиатуры).
 onMounted(async () => {
   await nextTick()
   const current = listEl.value?.querySelector<HTMLElement>('.item--current')

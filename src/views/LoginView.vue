@@ -26,7 +26,7 @@
           color="secondary"
           hide-details="auto"
         >
-          <!-- Своя кнопка: у иконки Vuetify подпись «Пароль добавочных действий» и нет состояния. -->
+          <!-- своя кнопка: у append-иконки Vuetify кривая подпись и нет aria-pressed -->
           <template #append-inner>
             <button
               type="button"
@@ -64,7 +64,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { mirror } from '@/api/http'
-// ?no-inline: иначе Vite вставит маленький SVG как data:, а CSP (img-src) data: не пускает.
+// ?no-inline: иначе Vite встроит SVG как data:, а CSP img-src его не пустит
 import markUrl from '@/assets/brand/mark.svg?no-inline'
 import { useAccountStore } from '@/stores/account'
 import { useEpisodeIndexStore } from '@/stores/episodeIndex'
@@ -83,7 +83,7 @@ const loading = ref(false)
 const error = ref('')
 
 async function submit (): Promise<void> {
-  // loading не блокирует отправку формы по Enter — повторный вход отсекаем здесь.
+  // :loading не блокирует отправку по Enter
   if (loading.value || !login.value.trim() || !password.value) return
   loading.value = true
   error.value = ''
@@ -101,7 +101,6 @@ async function submit (): Promise<void> {
 </script>
 
 <style scoped>
-/* Окно входа по центру зала, за ним — слабый бирюзовый «луч». */
 .login-page {
   min-height: calc(100vh - var(--bar-height));
   display: grid;

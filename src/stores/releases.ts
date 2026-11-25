@@ -4,10 +4,8 @@ import { getRelease } from '@/api/releases'
 import type { ReleaseFull } from '@/api/types'
 import { useEpisodeIndexStore } from './episodeIndex'
 
-// Карточка старше этого перечитывается при следующем обращении: у онгоингов выходят серии.
 const MAX_AGE_MS = 10 * 60 * 1000
 
-/** Кэш загруженных релизов: страница релиза и плеер не запрашивают одно и то же дважды. */
 export const useReleasesStore = defineStore('releases', () => {
   const cache = shallowReactive(new Map<string, ReleaseFull>())
   const loadedAt = new Map<number, number>()
@@ -19,7 +17,7 @@ export const useReleasesStore = defineStore('releases', () => {
     try {
       release = await getRelease(id)
     } catch (error) {
-      // Нет сети — лучше показать прежнюю карточку, чем ошибку (кроме явного обновления).
+      // Без сети отдаём старую карточку, но не при явном обновлении
       if (cached && !force) return cached
       throw error
     }
@@ -30,7 +28,6 @@ export const useReleasesStore = defineStore('releases', () => {
     return release
   }
 
-  /** Релиз из кэша без запроса: чтобы при повторном показе не было промежуточного пустого состояния. */
   function peek (id: string | number): ReleaseFull | null {
     return cache.get(String(id)) ?? null
   }

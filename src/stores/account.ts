@@ -7,7 +7,6 @@ import { readJson, writeJson } from '@/utils/storage'
 
 const TOKEN_KEY = 'account.token'
 
-/** Сессия пользователя, профиль и избранное. */
 export const useAccountStore = defineStore('account', () => {
   const token = ref<string | null>(readJson<string | null>(TOKEN_KEY, null))
   const profile = ref<Profile | null>(null)
@@ -23,14 +22,12 @@ export const useAccountStore = defineStore('account', () => {
     writeJson(TOKEN_KEY, value)
   }
 
-  /** Сессия истекла или токен отозван: забываем его без запроса к API. */
   function dropSession (): void {
     setToken(null)
     profile.value = null
     favoriteIds.value = new Set()
   }
 
-  /** Загрузить профиль и избранное по сохранённому токену. */
   async function init (): Promise<void> {
     if (!token.value) return
     try {

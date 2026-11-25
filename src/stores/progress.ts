@@ -6,9 +6,8 @@ import { useAccountStore } from './account'
 
 const KEY = 'progress.episodes'
 const SYNC_KEY = 'progress.syncedAt'
-// ID аккаунта, чьи тайм-коды лежат в локальном прогрессе.
 const OWNER_KEY = 'progress.owner'
-// Не чаще раза в столько мс по одной серии: более частые записи сервер отбрасывает.
+// Сервер молча отбрасывает запись по серии, если предыдущая пришла недавно
 const SEND_INTERVAL = 15000
 
 interface TimecodeUpdate {
@@ -20,20 +19,14 @@ interface TimecodeUpdate {
 export interface EpisodeProgress {
   time: number
   watched: boolean
-  /** Когда запись изменилась, мс. */
   updatedAt: number
 }
 
-/** Серия считается досмотренной, если осталось меньше 2 минут или 90%. */
 export function isWatched (time: number, duration: number | null | undefined): boolean {
   if (!duration) return false
   return duration - time < 120 || time / duration > 0.9
 }
 
-/**
- * Прогресс просмотра серий. Хранится локально и, если пользователь вошёл,
- * синхронизируется с тайм-кодами аккаунта AniLibria.
- */
 export const useProgressStore = defineStore('progress', () => {
   const episodes = ref<Record<string, EpisodeProgress>>(readJson(KEY, {}))
   const pending = new Map<string, TimecodeUpdate>()
@@ -47,7 +40,6 @@ export const useProgressStore = defineStore('progress', () => {
     return episodes.value[episodeId]
   }
 
-  // Когда тайм-код серии последний раз ушёл на сервер.
   const lastSent = new Map<string, number>()
 
   function scheduleFlush (delay: number): void {
@@ -56,15 +48,7 @@ export const useProgressStore = defineStore('progress', () => {
     }
   }
 
-  /**
-   * Отправить накопленные тайм-коды на сервер.
-   * Сервер AniLibria молча отбрасывает запись по серии, если предыдущая пришла несколько секунд назад,
-   * поэтому одна и та же серия уходит не чаще раза в SEND_INTERVAL, остальное досылается позже.
-   */
-  /**
-   * Отправить очередь. force — всё сразу, без паузы между записями одной серии
-   * (перед закрытием приложения: сервер может отбросить слишком частую запись, но это лучше, чем ничего).
-   */
+  // force: всё сразу перед закрытием, пусть сервер что-то и отбросит
   async function flush (force = false): Promise<void> {
     window.clearTimeout(flushTimer)
     flushTimer = undefined
@@ -89,7 +73,6 @@ export const useProgressStore = defineStore('progress', () => {
     try {
       await saveTimecodes(ready)
     } catch {
-      // Не получилось — вернуть в очередь, если за это время не появилось значение новее.
       for (const item of ready) if (!pending.has(item.release_episode_id)) pending.set(item.release_episode_id, item)
       scheduleFlush(SEND_INTERVAL)
     }
@@ -97,8 +80,7 @@ export const useProgressStore = defineStore('progress', () => {
 
   function save (episodeId: string, time: number, duration: number | null | undefined): void {
     const watched = isWatched(time, duration) || (get(episodeId)?.watched ?? false)
-    // Существующую запись меняем на месте: тогда сохранение позиции не пересчитывает отметки
-    // на всех карточках (они зависят только от watched, а он обычно не меняется).
+    // Меняем на месте, чтобы сохранение позиции не пересчитывало отметки на всех карточках
     const entry = episodes.value[episodeId]
     if (entry) {
       entry.time = Math.floor(time)
@@ -109,8 +91,7 @@ export const useProgressStore = defineStore('progress', () => {
     }
     persist()
     pending.set(episodeId, { release_episode_id: episodeId, time: Math.floor(time), is_watched: watched })
-    // Таймер не переставляется: плеер сохраняет каждые 10 секунд,
-    // и с перестановкой отправка во время просмотра не случалась бы никогда.
+    // Таймер не переставляем: плеер сохраняет каждые 10 с, и отправка не случилась бы никогда
     scheduleFlush(SEND_INTERVAL)
   }
 
@@ -124,10 +105,6 @@ export const useProgressStore = defineStore('progress', () => {
 
   let lastSyncAt = 0
 
-  /**
-   * Вошёл другой аккаунт: прогресс прошлого аккаунта убрать, а тайм-коды нового загрузить целиком.
-   * Прогресс, накопленный без входа (владельца нет), остаётся и уйдёт в аккаунт.
-   */
   function attach (userId: number): void {
     const owner = readJson<number | null>(OWNER_KEY, null)
     if (owner === userId) return
@@ -140,12 +117,6 @@ export const useProgressStore = defineStore('progress', () => {
     writeJson(OWNER_KEY, userId)
   }
 
-  /**
-   * Синхронизировать с тайм-кодами аккаунта: подтянуть просмотры с сайта и других приложений
-   * и отправить локальные, которые изменились после прошлой синхронизации (в том числе без входа).
-   * Серверная запись побеждает, если локальная не менялась после прошлой синхронизации.
-   * force = false — не чаще раза в минуту: вызывается при каждом возврате фокуса в окно.
-   */
   async function sync (force = true): Promise<void> {
     const account = useAccountStore()
     if (!account.isAuthorized || !account.profile) return
@@ -155,8 +126,7 @@ export const useProgressStore = defineStore('progress', () => {
     const since = readJson<string | null>(SYNC_KEY, null)
     const lastSync = since ? Date.parse(since) : 0
     const startedAt = Date.now()
-    // Что изменилось локально с прошлой синхронизации (смотрели без входа, закрыли окно до отправки).
-    // Снимок до запроса: ответ сервера ниже эти записи не перезаписывает.
+    // Снимок до запроса: локальные правки с прошлой синхронизации ответ сервера не перетирает
     const dirty = new Set(Object.entries(episodes.value)
       .filter(([, local]) => local.updatedAt >= lastSync)
       .map(([id]) => id))
@@ -165,10 +135,8 @@ export const useProgressStore = defineStore('progress', () => {
       for (const [id, time, watched] of remote) {
         if (dirty.has(id)) continue
         const local = episodes.value[id]
-        // Правка во время запроса новее ответа сервера.
         if (local && local.updatedAt >= startedAt) continue
-        // Время изменения сервер не отдаёт; ставим чуть раньше отметки синхронизации,
-        // чтобы в следующий раз запись не считалась локальной правкой.
+        // Сервер не отдаёт время изменения, ставим раньше startedAt, чтобы не считать это локальной правкой
         episodes.value[id] = { time, watched, updatedAt: startedAt - 1 }
       }
       for (const id of dirty) {
@@ -181,7 +149,7 @@ export const useProgressStore = defineStore('progress', () => {
       writeJson(SYNC_KEY, new Date(startedAt).toISOString())
       await flush()
     } catch {
-      // Сеть или сессия: попробуем в следующий раз.
+      // сеть или сессия, повторим в следующий раз
     }
   }
 

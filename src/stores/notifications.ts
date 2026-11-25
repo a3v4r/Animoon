@@ -22,13 +22,8 @@ export interface NewEpisodeNotice {
   read: boolean
 }
 
-/**
- * Уведомления о новых сериях релизов из избранного.
- * Раз в 10 минут смотрит последние обновления и сравнивает номер последней серии с запомненным.
- */
 export const useNotificationsStore = defineStore('notifications', () => {
   const items = ref<NewEpisodeNotice[]>(readJson(ITEMS_KEY, []))
-  // Последняя известная серия по каждому релизу из избранного.
   const seen = readJson<Record<number, number>>(SEEN_KEY, {})
   let timer: number | undefined
 
@@ -57,7 +52,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         if (ordinal == null || !account.favoriteIds.has(release.id)) continue
         const known = seen[release.id]
         seen[release.id] = Math.max(known ?? 0, ordinal)
-        // Первая встреча с релизом — только запоминаем, иначе после входа посыплются старые серии.
+        // Первую встречу с релизом только запоминаем, иначе после входа посыплются старые серии
         if (known == null || ordinal <= known) continue
         const notice: NewEpisodeNotice = {
           id: `${release.id}-${ordinal}`,
@@ -73,7 +68,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       }
       persist()
     } catch {
-      // Сеть недоступна — проверим в следующий раз.
+      // сеть недоступна, проверим в следующий раз
     }
   }
 

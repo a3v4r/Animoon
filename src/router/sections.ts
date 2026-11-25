@@ -1,10 +1,8 @@
-/** Разделы приложения: колонка слева и переходы из поиска. */
 export interface Section {
   name: string
   title: string
   icon: string
   activeIcon: string
-  /** Другие слова, по которым раздел находится в поиске. */
   keywords: string[]
 }
 
@@ -23,7 +21,6 @@ export const SETTINGS_SECTION: Section = {
   keywords: ['аккаунт', 'вход', 'выход', 'качество', 'уведомления']
 }
 
-/** Разделы, подходящие под запрос поиска (по названию и ключевым словам). */
 export function matchSections (query: string): Section[] {
   const q = query.trim().toLowerCase()
   if (!q) return []

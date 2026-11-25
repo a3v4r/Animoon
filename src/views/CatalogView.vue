@@ -1,10 +1,9 @@
 <template>
   <div class="catalog">
-    <!-- Озвучивает итог готовой выдачи; область всегда в DOM, иначе диктор её не прочитает. -->
+    <!-- live-область всегда в DOM, иначе диктор её не прочитает -->
     <div class="d-sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</div>
 
     <page-header title="Каталог" :subtitle="summary" :class="{ 'catalog-head--stale': list.stale.value }">
-      <!-- Сортировка и сброс — в строке заголовка, чтобы ряд фильтров не переносился. -->
       <template #actions>
         <div ref="actionsEl" class="filters-end">
           <filter-menu
@@ -88,7 +87,7 @@
       @reset="retry"
     >
       <template #empty-action>
-        <!-- Сетка пересоздаётся вместе с кнопкой, поэтому фокус уводим наверх, на первую таблетку фильтров. -->
+        <!-- кнопка исчезает вместе с пустой сеткой, фокус уводим на фильтры -->
         <v-btn
           v-if="activeCount"
           variant="tonal"
@@ -163,7 +162,6 @@ const yearColumns: { key: YearKey, title: string, label: string }[] = [
   { key: 'toYear', title: 'По', label: 'Год по' }
 ]
 
-/** «2026», «2020–2026», «с 2020», «до 2020». */
 const yearsText = computed(() => {
   const { fromYear: from, toYear: to } = filters
   if (from && to) return from === to ? String(from) : `${Math.min(from, to)}–${Math.max(from, to)}`
@@ -174,13 +172,11 @@ const yearsText = computed(() => {
 
 function setYear (key: YearKey, year: number): void {
   filters[key] = year
-  // Перевёрнутый диапазон выравниваем: «с 2026 по 2020» → обе границы на выбранный год.
   const other: YearKey = key === 'fromYear' ? 'toYear' : 'fromYear'
   const otherYear = filters[other]
   if (otherYear != null && (key === 'fromYear' ? year > otherYear : year < otherYear)) filters[other] = year
 }
 
-// Сортировка всегда выбрана: пустое значение из меню не принимаем.
 const sortingModel = computed({
   get: () => filters.sorting,
   set: (value: string | string[] | null) => {
@@ -195,11 +191,9 @@ const titleOf = <V extends string | number>(items: FilterItem<V>[], values: V[])
 
 const releasesText = (total: number) => `${total.toLocaleString('ru-RU')} ${pluralize(total, ['релиз', 'релиза', 'релизов'])}`
 
-/** Сводка под заголовком: «1 234 релиза · «наруто» · Экшен +1 · ТВ · 2026 · онгоинг · обновлены недавно». */
 const summary = computed(() => {
   const parts: string[] = []
   const total = list.total.value
-  // Пока грузится новая выдача, держим прежнее число (строка приглушена), чтобы сводка не мигала.
   if (total != null) parts.push(releasesText(total))
   if (appliedSearch.value) parts.push(`«${appliedSearch.value}»`)
   const genres = titleOf(genreItems.value, filters.genres)
@@ -213,14 +207,12 @@ const summary = computed(() => {
   return parts.join(' · ')
 })
 
-/** Для диктора: только итог готовой выдачи, по одному разу на каждую новую выдачу. */
 const announcement = computed(() => {
   const total = list.total.value
   if (total == null || list.stale.value) return ''
   return total === 0 ? 'Ничего не нашлось' : `Найдено ${releasesText(total)}`
 })
 
-/** Сколько фильтров включено — для «Сбросить · N»; ровно столько подсвечено. Сортировка — не фильтр. */
 const activeCount = computed(() => [
   filters.genres.length > 0,
   filters.types.length > 0,
@@ -248,10 +240,6 @@ const list = useInfiniteList(page => getCatalog(page, toApi()))
 
 let searchTimer: number | undefined
 
-/**
- * Сбрасывает фильтры и поиск сразу, без ожидания debounce; сортировку оставляет.
- * Если кнопка была в фокусе, а после сброса исчезнет, — фокус переходит на focusTarget().
- */
 function resetFilters (event: Event, focusTarget: () => HTMLElement | null | undefined): void {
   const hadFocus = event.currentTarget === document.activeElement
   window.clearTimeout(searchTimer)
@@ -266,11 +254,10 @@ function clearSearch (): void {
   searchInput.value?.focus()
 }
 
-// Сравниваем сериализованное состояние: присваивание равных значений (новый пустой массив) не перезагружает выдачу.
+// сравниваем строкой: присвоение нового пустого массива не должно перезагружать выдачу
 watch(() => JSON.stringify(filters), () => writeJson(FILTERS_KEY, filters))
 watch(() => JSON.stringify(toApi()), () => list.reset())
 
-// Поиск по названию срабатывает через полсекунды после ввода.
 watch(search, value => {
   window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(() => {
@@ -278,7 +265,7 @@ watch(search, value => {
   }, 500)
 })
 
-// При открытии меню годов прокручиваем каждую колонку к выбранному году (содержимое меню монтируется лениво).
+// содержимое v-menu монтируется лениво, поэтому ждём nextTick
 watch(yearsOpen, async open => {
   if (!open) return
   await nextTick()
@@ -288,7 +275,6 @@ watch(yearsOpen, async open => {
   })
 })
 
-// Справочники: при сбое повторяем при возврате на экран и по «Повторить».
 let refsLoading = false
 async function loadRefs (): Promise<void> {
   if (refs.value || refsLoading) return
@@ -296,7 +282,7 @@ async function loadRefs (): Promise<void> {
   try {
     refs.value = await getCatalogReferences()
   } catch {
-    // Без справочников фильтры пустые, но выдача работает.
+    // без справочников фильтры пустые, но выдача работает
   } finally {
     refsLoading = false
   }
@@ -323,14 +309,12 @@ function retry (): void {
   margin-top: 20px;
 }
 
-/* У строки заголовка выравнивание по базовой линии — таблетки ставим по центру сами. */
 .filters-end {
   display: flex;
   gap: 8px;
   align-self: center;
 }
 
-/* Пока грузится новая выдача, число в сводке прежнее — приглушаем. */
 .catalog-head--stale :deep(.subtitle) {
   opacity: 0.5;
 }
@@ -343,7 +327,6 @@ function retry (): void {
   padding: 24px 40px 0;
 }
 
-/* Поиск сжимается первым, чтобы ряд фильтров не переносился и с заполненными таблетками. */
 .name-search {
   flex: 1 1 120px;
   min-width: 120px;
@@ -385,7 +368,6 @@ function retry (): void {
   color: var(--text-3);
 }
 
-/* Свой крестик вместо системного у type=search. */
 .name-search input::-webkit-search-cancel-button {
   display: none;
 }

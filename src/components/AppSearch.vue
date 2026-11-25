@@ -1,7 +1,5 @@
 <template>
-  <!-- Обёртка — корень компонента: класс от родителя ложится на неё, а не на корень v-menu
-       (он уходит в слой оверлеев, и стили поля превращались в полосу во всю ширину окна).
-       В фокусе поле расширяется до ширины списка результатов, и список встаёт ровно под ним. -->
+  <!-- Корень - div, а не v-menu: класс с родителя на v-menu уехал бы в оверлей -->
   <div class="search-root" :class="{ 'search-root--wide': focused || open }">
     <v-menu
       v-model="open"
@@ -34,7 +32,6 @@
       </template>
 
       <v-list v-if="hasQuery" class="results" density="compact">
-        <!-- Сначала разделы приложения: «Поиск и переход». -->
         <v-list-item
           v-for="section in sections"
           :key="section.name"
@@ -44,7 +41,7 @@
           subtitle="Раздел"
         />
         <v-divider v-if="sections.length && results.length" />
-        <!-- Пока ждём ответ, меню уже открыто — без этой строки оно было пустой полоской. -->
+        <!-- Без этой строки открытое меню во время загрузки - пустая полоска -->
         <v-list-item v-if="!searched && results.length === 0 && sections.length === 0" title="Ищем…" />
         <v-list-item v-if="!loading && searched && results.length === 0 && sections.length === 0" title="Ничего не нашлось" />
         <v-list-item
@@ -82,10 +79,9 @@ const results = ref<Release[]>([])
 const loading = ref(false)
 const open = ref(false)
 const focused = ref(false)
-// Поиск по релизам уже отработал для текущего запроса (чтобы не мигать «Ничего не нашлось» во время ввода).
+// Чтобы не мигало «Ничего не нашлось», пока идёт ввод
 const searched = ref(false)
 
-// Разделы находятся сразу, с первой буквы и без запроса к сети.
 const sections = computed(() => matchSections(query.value))
 const hasQuery = computed(() => query.value.trim().length > 0)
 
@@ -117,7 +113,6 @@ watch(query, value => {
   }, 350)
 })
 
-// Перешли на релиз из результатов — поле поиска очищается.
 watch(() => route.fullPath, clear)
 
 function onFocus (): void {
@@ -126,7 +121,6 @@ function onFocus (): void {
 }
 
 function clear (): void {
-  // Незаконченный запрос больше не нужен: его ответ не покажется, индикатор гаснет сразу.
   window.clearTimeout(timer)
   requestId++
   loading.value = false
@@ -134,7 +128,6 @@ function clear (): void {
   open.value = false
 }
 
-// Enter — первый результат: раздел, если подошёл, иначе первый релиз.
 function openFirst (): void {
   const section = sections.value[0]
   const first = results.value[0]
@@ -143,7 +136,6 @@ function openFirst (): void {
   void router.push(section ? { name: section.name } : { name: 'release', params: { id: first!.id } })
 }
 
-// Ctrl K — перейти к поиску из любого места.
 function onKey (event: KeyboardEvent): void {
   if ((event.ctrlKey || event.metaKey) && event.code === 'KeyK') {
     event.preventDefault()

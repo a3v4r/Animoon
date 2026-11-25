@@ -32,8 +32,7 @@ import { pluralize } from '@/utils/plural'
 
 defineProps<{ items: ScheduleItem[], dayName: string }>()
 
-// Сколько позиций помещается в одну строку: лишние не рисуем, чтобы до скрытых
-// нельзя было дойти Tab'ом. Колонка от 190 px, промежуток 16 px.
+// Лишние не рендерим, чтобы Tab не заходил в скрытые
 const COLUMN = 190
 const GAP = 16
 const list = ref<HTMLElement | null>(null)

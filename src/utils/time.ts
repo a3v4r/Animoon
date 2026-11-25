@@ -1,4 +1,3 @@
-/** Секунды в «ч:мм:сс» или «м:сс». */
 export function formatDuration (seconds: number): string {
   const total = Math.max(0, Math.floor(seconds))
   const h = Math.floor(total / 3600)

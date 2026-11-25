@@ -1,7 +1,4 @@
-// HTTP-клиент AniLibria API v1.
-// В приложении запросы идут через tauri-plugin-http (Rust): нет CORS, прокси настраивается в Rust.
-// В обычном браузере (pnpm dev без Tauri) используется window.fetch.
-// Если зеркало не отвечает или отдаёт 5xx, клиент переключается на следующее.
+// В Tauri запросы идут через plugin-http: нет CORS, прокси настраивается в Rust
 
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 
@@ -12,12 +9,10 @@ const doFetch: typeof fetch = isTauri ? (tauriFetch as typeof fetch) : window.fe
 
 let current = 0
 
-/** Адрес зеркала, через которое сейчас идут запросы. Нужен и для картинок: API отдаёт пути вида /storage/... */
 export function mirror (): string {
   return MIRRORS[current]
 }
 
-/** Абсолютный адрес картинки или файла с зеркала. */
 export function mediaUrl (path: string | null | undefined): string {
   if (!path) return ''
   if (/^https?:\/\//.test(path)) return path
@@ -42,7 +37,6 @@ function buildUrl (base: string, path: string, query?: Query): string {
 
 let authToken: string | null = null
 
-/** Токен сессии пользователя; передаётся в заголовке Authorization во всех запросах. */
 export function setAuthToken (token: string | null): void {
   authToken = token
 }
@@ -54,7 +48,6 @@ export interface ApiOptions {
   signal?: AbortSignal
 }
 
-/** Текст ошибки из ответа API: { message, errors: { поле: [текст] } }. */
 async function errorMessage (response: Response): Promise<string> {
   try {
     const data = await response.json() as { message?: string, errors?: Record<string, string[]> }

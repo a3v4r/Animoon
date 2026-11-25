@@ -4,7 +4,7 @@ import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import { ru } from 'vuetify/locale'
 
-// Палитра «Кинотеатр» (см. src/styles/main.scss): бирюзовый акцент и тёплый для расписания.
+// цвета дублируют переменные из src/styles/main.scss
 export default createVuetify({
   locale: { locale: 'ru', messages: { ru } },
   icons: { defaultSet: 'mdi' },

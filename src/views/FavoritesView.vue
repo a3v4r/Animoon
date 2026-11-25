@@ -51,7 +51,6 @@
       <v-btn variant="tonal" :to="{ name: 'catalog' }">Открыть каталог</v-btn>
     </empty-state>
 
-    <!-- По годам выхода: сводка года и сворачивание (запоминается). -->
     <section
       v-for="group in groups"
       v-else
@@ -60,7 +59,7 @@
       class="year"
       :aria-labelledby="`year-title-${group.year}`"
     >
-      <!-- Заголовок-аккордеон: кнопка внутри h2 (заголовок в кнопке недопустим). -->
+      <!-- кнопка внутри h2, а не наоборот: заголовок внутри button невалиден -->
       <h2 :id="`year-title-${group.year}`" class="year-h">
         <button
           class="ui-btn year-head"
@@ -117,8 +116,6 @@ interface YearGroup {
   genres: string[]
 }
 
-// Годы по убыванию; внутри года порядок API — недавно обновлённые первыми.
-// Жанры года — от частых к редким: в строку попадают характерные, а не первые по алфавиту.
 const groups = computed<YearGroup[]>(() => {
   const byYear = new Map<number, ReleaseFull[]>()
   for (const release of releases.value) {
@@ -162,7 +159,6 @@ function jumpTo (year: number): void {
   void nextTick(() => {
     const section = document.getElementById(`year-${year}`)
     section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    // Фокус на кнопку года (уже раскрытого): следующий Tab — в его сетку.
     section?.querySelector<HTMLElement>('.year-head')?.focus({ preventScroll: true })
   })
 }
@@ -175,13 +171,13 @@ function toggle (year: number): void {
   writeJson(COLLAPSED_KEY, [...next])
 }
 
-// Номер последней загрузки: ответ устаревшего запроса (или пришедший после выхода) отбрасывается.
+// ответ устаревшего запроса или пришедший после выхода отбрасываем
 let loadSeq = 0
 
 async function load (): Promise<void> {
   const seq = ++loadSeq
   if (!account.isAuthorized) {
-    // Вышли — убрать данные прошлого аккаунта, иначе они остаются в шапке и мелькают при следующем входе.
+    // иначе данные прошлого аккаунта мелькнут при следующем входе
     releases.value = []
     error.value = ''
     loading.value = false
@@ -192,7 +188,6 @@ async function load (): Promise<void> {
   try {
     const list = await getAllFavorites()
     if (seq !== loadSeq) return
-    // В избранном релизы приходят со списком серий — заодно запомнить их для отметок на карточках.
     for (const release of list) index.learn(release)
     releases.value = list
   } catch (e) {
@@ -204,7 +199,6 @@ async function load (): Promise<void> {
 
 onMounted(load)
 
-// Добавили или убрали релиз на другой странице, вошли или вышли — перечитать.
 watch(() => [account.favoriteIds, account.isAuthorized], () => { void load() })
 </script>
 

@@ -1,4 +1,3 @@
-# Проверка на каждый пуш в main и на pull request: типы и сборка фронтенда, clippy для Rust.
 name: CI
 
 on:
@@ -25,7 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # В package.json нет поля packageManager, поэтому версия pnpm задана здесь (как локально).
       - uses: pnpm/action-setup@v6
         with:
           version: 9.15.9
@@ -36,7 +34,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      # pnpm build = vue-tsc + vite build.
       - run: pnpm build
 
   rust:
@@ -52,8 +49,7 @@ jobs:
           sudo apt-get install -y build-essential pkg-config \
             libwebkit2gtk-4.1-dev librsvg2-dev libxdo-dev libssl-dev
 
-      # Версия закреплена: в каждом релизе Rust появляются новые линты, и с -D warnings CI краснел бы
-      # без изменений в коде. Поднимать осознанно (локально сейчас тоже 1.99).
+      # версия закреплена: новые линты clippy с -D warnings краснили бы CI без изменений в коде
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.99.0
@@ -63,7 +59,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      # generate_context!() требует папку frontendDist (../dist); для проверки кода хватит пустой.
+      # generate_context!() требует ../dist, для clippy хватит пустой папки
       - name: Заглушка frontendDist
         run: mkdir -p dist
 

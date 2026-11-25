@@ -1,8 +1,3 @@
-# Релиз по тегу v*: черновик релиза на GitHub, сборки под Windows, Linux и macOS (универсальная),
-# подписанные обновления и latest.json для автообновления. Публикует релиз человек — после проверки
-# (или автоматически, если в Settings → Variables задано AUTO_PUBLISH = true).
-#
-# Нужны секреты репозитория: TAURI_SIGNING_PRIVATE_KEY и TAURI_SIGNING_PRIVATE_KEY_PASSWORD.
 name: Release
 
 on:
@@ -29,8 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # latest.json берёт версию из tauri.conf.json, а не из тега: без проверки легко выпустить
-      # релиз, который автообновление не увидит.
+      # latest.json берёт версию из tauri.conf.json, а не из тега
       - name: Версия тега совпадает с версией приложения
         id: version
         run: |
@@ -45,7 +39,7 @@ jobs:
           fi
           echo "version=$tag" >> "$GITHUB_OUTPUT"
 
-      # Черновик создаётся один раз здесь: если его создают сразу три сборки, бывают дубли.
+      # черновик создаём один раз здесь, иначе три сборки плодят дубли
       - name: Создать черновик (или взять существующий)
         id: release
         env:
@@ -58,8 +52,7 @@ jobs:
           }
           id=$(find_id)
           if [ -z "$id" ]; then
-            # id берём из ответа на создание: список релизов обновляется с задержкой, и поиск сразу
-            # после создания черновика его не находил (так упал первый запуск v2.0.0).
+            # id из ответа на создание: список релизов обновляется с задержкой
             pre=false
             case "$TAG" in *-*) pre=true ;; esac
             id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
@@ -80,15 +73,11 @@ jobs:
             runner: windows-latest
             args: ''
             rust_targets: ''
-          # Собираем на самом старом образе: AppImage и deb берут glibc системы, на которой собраны
-          # (22.04 → glibc 2.35: Ubuntu 22.04+, Mint 21+, Debian 12+). GitHub снимает ubuntu-22.04
-          # 17.04.2027, а с 23.03.2027 устраивает перерывы (brownout) — до 23.03 перейти на 24.04
-          # или на сборку в контейнере со старой системой.
+          # 22.04 ради glibc 2.35 в AppImage/deb; образ снимут 17.04.2027, brownout с 23.03.2027
           - name: linux-x64
             runner: ubuntu-22.04
             args: ''
             rust_targets: ''
-          # Один .dmg для Apple Silicon и Intel.
           - name: macos-universal
             runner: macos-latest
             args: --target universal-apple-darwin
@@ -98,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # GStreamer нужен, чтобы AppImage взял его с собой (bundleMediaFramework): без него нет видео.
+      # без GStreamer в AppImage (bundleMediaFramework) не будет видео
       - name: Системные пакеты Linux
         if: runner.os == 'Linux'
         run: |
@@ -127,8 +116,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Собирает (beforeBuildCommand соберёт фронтенд), подписывает обновления и загружает
-      # установщики, .sig и общий latest.json в черновик.
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -153,7 +140,6 @@ jobs:
       ID: ${{ needs.draft.outputs.release_id }}
       VERSION: ${{ needs.draft.outputs.version }}
     steps:
-      # Каждая сборка дописывает latest.json сама; при совпадении по времени платформа может потеряться.
       - name: latest.json содержит все платформы
         run: |
           asset=$(gh api "repos/$GITHUB_REPOSITORY/releases/$ID" \

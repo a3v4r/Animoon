@@ -12,7 +12,6 @@ defineProps<{ icon?: string, title?: string, text?: string, alert?: boolean }>()
 </script>
 
 <style scoped>
-/* Пустой экран, ошибка, загрузка — по центру, с иконкой и действием под текстом. */
 .empty-state {
   display: flex;
   flex-direction: column;

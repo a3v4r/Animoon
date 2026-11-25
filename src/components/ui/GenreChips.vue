@@ -1,5 +1,4 @@
 <template>
-  <!-- Одна остановка Tab на всю ленту, внутри — стрелки, Home и End. -->
   <div class="genres" role="toolbar" aria-label="Жанры">
     <div ref="strip" class="strip" @scroll.passive="update" @keydown="onKeydown">
       <button
@@ -25,7 +24,6 @@
         {{ genre.name }}
       </button>
     </div>
-    <!-- Края затухают, только когда за ними есть ещё жанры. Клик мышью не забирает фокус. -->
     <button v-show="canLeft" class="ui-btn edge edge--left" tabindex="-1" aria-hidden="true" @mousedown.prevent @click="scrollBy(-1)">
       <v-icon icon="mdi-chevron-left" size="20" />
     </button>
@@ -46,10 +44,8 @@ const strip = ref<HTMLElement | null>(null)
 const canLeft = ref(false)
 const canRight = ref(false)
 
-/** Чип, на котором последний раз был фокус: 0 — «Все жанры», дальше жанры по порядку. */
 const current = ref<number | null>(null)
 
-/** Куда попадает Tab: последний фокус, иначе первый нажатый чип. */
 const tabStop = computed(() => {
   if (current.value != null && current.value <= props.genres.length) return current.value
   const i = props.genres.findIndex(g => props.modelValue.includes(g.id))
@@ -57,7 +53,7 @@ const tabStop = computed(() => {
 })
 
 function clearAll (): void {
-  // Пустой выбор не переприсваиваем: новый [] перезагрузил бы каталог.
+  // Новый [] перезагрузил бы каталог
   if (props.modelValue.length) emit('update:modelValue', [])
 }
 
@@ -67,7 +63,6 @@ function toggle (id: number): void {
 }
 
 function onKeydown (e: KeyboardEvent): void {
-  // Сочетания (Alt+← «назад», Ctrl+Home и т. п.) не перехватываем.
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
   const chips = Array.from(strip.value?.querySelectorAll<HTMLElement>('.chip') ?? [])
   const from = chips.indexOf(e.target as HTMLElement)
@@ -80,7 +75,7 @@ function onKeydown (e: KeyboardEvent): void {
   if (to == null) return
   e.preventDefault()
   const el = chips[to]
-  // Прокручиваем сами: scrollIntoView учитывает scroll-padding ленты, и чип не уходит под затухание.
+  // Прокручиваем сами: scrollIntoView учитывает scroll-padding, и чип не уходит под затухание
   el.focus({ preventScroll: true })
   el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
 }
@@ -118,10 +113,9 @@ watch(() => props.genres, () => {
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  /* Запас под кольцо фокуса (outline 2px + offset 2px), иначе лента его обрезает. */
+  /* Запас под кольцо фокуса, иначе лента его обрезает */
   padding: 4px;
   margin: -4px;
-  /* Ширина затухания + кольцо: чип в фокусе не уезжает под край. */
   scroll-padding-inline: 52px;
 }
 

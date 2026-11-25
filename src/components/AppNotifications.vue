@@ -42,7 +42,6 @@ import { useNotificationsStore } from '@/stores/notifications'
 const account = useAccountStore()
 const notifications = useNotificationsStore()
 
-// Закрыли список — значит всё увидели.
 function onToggle (open: boolean): void {
   if (!open) notifications.markAllRead()
 }
@@ -58,7 +57,6 @@ function formatAgo (time: number): string {
 </script>
 
 <style scoped>
-/* Стеклянная кнопка как в панели окна; число новых серий — тёплым. */
 .bell {
   position: relative;
   width: 36px;

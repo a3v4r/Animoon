@@ -5,18 +5,13 @@ import type { ScheduleItem } from '@/api/types'
 
 const MAX_AGE_MS = 10 * 60 * 1000
 
-/** День недели как в API: 1–7 с понедельника (в JS 0 — воскресенье). */
+// В API дни 1-7 с понедельника, в JS 0 - воскресенье
 export function weekday (date = new Date()): number {
   return ((date.getDay() + 6) % 7) + 1
 }
 
-/**
- * Расписание на неделю, общее для главной, расписания и страницы релиза:
- * один источник для «вышла / выйдет сегодня» и один запрос на всех.
- */
 export const useScheduleStore = defineStore('schedule', () => {
   const items = ref<ScheduleItem[]>([])
-  // Текущий день недели для плашек «Сегодня»; сверяется раз в минуту, чтобы пережить полночь.
   const today = ref(weekday())
   window.setInterval(() => {
     const now = weekday()
@@ -41,7 +36,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     return items.value.find(entry => entry.release.id === releaseId)
   }
 
-  /** «Серия 9 вышла сегодня» / «Серия 10 — сегодня» по расписанию; null, если сегодня не выходит. */
   function airsToday (releaseId: number): { out: boolean, ordinal: number | null } | null {
     const entry = byRelease(releaseId)
     if (!entry || entry.release.publish_day?.value !== weekday()) return null
