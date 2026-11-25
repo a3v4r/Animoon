@@ -58,10 +58,13 @@ jobs:
           }
           id=$(find_id)
           if [ -z "$id" ]; then
-            flags=(--draft --verify-tag --generate-notes --title "Animoon $TAG")
-            case "$TAG" in *-*) flags+=(--prerelease) ;; esac
-            gh release create "$TAG" -R "$GITHUB_REPOSITORY" "${flags[@]}"
-            id=$(find_id)
+            # id берём из ответа на создание: список релизов обновляется с задержкой, и поиск сразу
+            # после создания черновика его не находил (так упал первый запуск v2.0.0).
+            pre=false
+            case "$TAG" in *-*) pre=true ;; esac
+            id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" -f name="Animoon $TAG" \
+              -F draft=true -F prerelease="$pre" -F generate_release_notes=true --jq .id)
           fi
           test -n "$id"
           echo "id=$id" >> "$GITHUB_OUTPUT"
