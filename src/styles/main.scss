@@ -1,0 +1,211 @@
+@use 'fonts';
+
+// Оформление «Кинотеатр»: тёмный зал, один холодный акцент («луч проектора»), тёплый — для расписания.
+:root {
+  --bg: #0b0c10;
+  --surface: #15171d;
+  --surface-2: #1e2129;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --text: #f5f6f8;
+  --text-2: #b9bcc6;
+  --text-3: #8e929d; // ≥ 4,5:1 и на --surface-2, и на #262a33 (наведение на таблетку)
+  --accent: #5ce1e6;
+  --accent-ink: #04272b;
+  --accent-soft: rgba(92, 225, 230, 0.14);
+  --warm: #ffb547;
+  --warm-ink: #2a1800;
+  --glass: rgba(16, 18, 24, 0.72);
+  --glass-line: rgba(255, 255, 255, 0.12);
+
+  --font-display: 'Unbounded', system-ui, sans-serif;
+  --font-ui: 'Onest', system-ui, sans-serif;
+
+  // Размеры каркаса окна.
+  --rail-width: 64px;
+  --bar-height: 56px;
+
+  // Шрифты компонентов Vuetify.
+  --v-font-body: var(--font-ui);
+  --v-font-heading: var(--font-ui);
+}
+
+// Общие стили: без выделения текста и перетаскивания, как в нативном приложении.
+*, *::before, *::after {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.allow-select {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+html {
+  overflow-y: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+// Сброс стандартного вида <button> для своих кнопок (Vuetify 4 его не сбрасывает:
+// без этого браузер рисует серую заливку и выпуклую рамку).
+.ui-btn {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+// Заголовки разделов и крупные названия — Unbounded.
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.ell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clamp-2,
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+// Плашки: «Серия 9», «Новая серия», «Выйдет сегодня».
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+
+  .v-icon {
+    font-size: 14px;
+  }
+
+  &--sm {
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+
+  &--accent {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  &--warm {
+    background: rgba(40, 28, 8, 0.72);
+    color: var(--warm);
+    box-shadow: inset 0 0 0 1px rgba(255, 181, 71, 0.35);
+  }
+
+  &--glass {
+    background: rgba(8, 9, 12, 0.72);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--glass-line);
+  }
+}
+
+// Тонкая полоса прогресса.
+.thin-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+
+  > i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  cursor: pointer;
+  border: 2px solid var(--bg);
+  border-radius: 6px;
+  background-color: #2a2d36;
+}
+
+// «Таблетка» фильтра (каталог и другие списки): «Тип: ТВ»; включённый — бирюзовый.
+.filter-chip {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 0 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.filter-chip:hover {
+  color: var(--text);
+  background: #262a33;
+}
+
+.filter-chip b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.filter-chip--on {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px rgba(92, 225, 230, 0.4);
+  color: var(--accent);
+}
+
+.filter-chip--on:hover {
+  background: rgba(92, 225, 230, 0.2);
+  color: var(--accent);
+}
+
+.filter-chip--on b {
+  color: var(--accent);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
