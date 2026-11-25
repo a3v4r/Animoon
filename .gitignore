@@ -15,3 +15,7 @@ out/
 package-lock.json
 /src-tauri/target/
 /src-tauri/gen/schemas/
+
+# local notes
+/docs/STATE.md
+/docs/design/
