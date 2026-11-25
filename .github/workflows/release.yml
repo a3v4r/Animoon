@@ -1,0 +1,178 @@
+# Релиз по тегу v*: черновик релиза на GitHub, сборки под Windows, Linux и macOS (универсальная),
+# подписанные обновления и latest.json для автообновления. Публикует релиз человек — после проверки
+# (или автоматически, если в Settings → Variables задано AUTO_PUBLISH = true).
+#
+# Нужны секреты репозитория: TAURI_SIGNING_PRIVATE_KEY и TAURI_SIGNING_PRIVATE_KEY_PASSWORD.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  draft:
+    name: Черновик релиза
+    runs-on: ubuntu-24.04
+    outputs:
+      release_id: ${{ steps.release.outputs.id }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # latest.json берёт версию из tauri.conf.json, а не из тега: без проверки легко выпустить
+      # релиз, который автообновление не увидит.
+      - name: Версия тега совпадает с версией приложения
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          conf=$(jq -r .version src-tauri/tauri.conf.json)
+          pkg=$(jq -r .version package.json)
+          cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
+          echo "tag=$tag tauri.conf.json=$conf package.json=$pkg Cargo.toml=$cargo"
+          if [ "$tag" != "$conf" ] || [ "$tag" != "$pkg" ] || [ "$tag" != "$cargo" ]; then
+            echo "::error::Тег $GITHUB_REF_NAME не совпадает с версией в конфигах"
+            exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+      # Черновик создаётся один раз здесь: если его создают сразу три сборки, бывают дубли.
+      - name: Создать черновик (или взять существующий)
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          find_id() {
+            gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq ".[] | select(.tag_name == \"$TAG\") | .id" | head -n1
+          }
+          id=$(find_id)
+          if [ -z "$id" ]; then
+            flags=(--draft --verify-tag --generate-notes --title "AniLibrix Reborn $TAG")
+            case "$TAG" in *-*) flags+=(--prerelease) ;; esac
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" "${flags[@]}"
+            id=$(find_id)
+          fi
+          test -n "$id"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Сборка (${{ matrix.name }})
+    needs: draft
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            runner: windows-latest
+            args: ''
+            rust_targets: ''
+          # Собираем на самом старом образе: AppImage и deb берут glibc системы, на которой собраны
+          # (22.04 → glibc 2.35: Ubuntu 22.04+, Mint 21+, Debian 12+). GitHub снимает ubuntu-22.04
+          # 17.04.2027, а с 23.03.2027 устраивает перерывы (brownout) — до 23.03 перейти на 24.04
+          # или на сборку в контейнере со старой системой.
+          - name: linux-x64
+            runner: ubuntu-22.04
+            args: ''
+            rust_targets: ''
+          # Один .dmg для Apple Silicon и Intel.
+          - name: macos-universal
+            runner: macos-latest
+            args: --target universal-apple-darwin
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # GStreamer нужен, чтобы AppImage взял его с собой (bundleMediaFramework): без него нет видео.
+      - name: Системные пакеты Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config file patchelf xdg-utils \
+            libwebkit2gtk-4.1-dev librsvg2-dev libxdo-dev libssl-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.name }}
+
+      - run: pnpm install --frozen-lockfile
+
+      # Собирает (beforeBuildCommand соберёт фронтенд), подписывает обновления и загружает
+      # установщики, .sig и общий latest.json в черновик.
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.draft.outputs.release_id }}
+          tagName: ${{ github.ref_name }}
+          releaseDraft: true
+          uploadUpdaterJson: true
+          updaterJsonPreferNsis: true
+          retryAttempts: 1
+          args: ${{ matrix.args }}
+
+  publish:
+    name: Проверка latest.json и публикация
+    needs: [draft, build]
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+      ID: ${{ needs.draft.outputs.release_id }}
+      VERSION: ${{ needs.draft.outputs.version }}
+    steps:
+      # Каждая сборка дописывает latest.json сама; при совпадении по времени платформа может потеряться.
+      - name: latest.json содержит все платформы
+        run: |
+          asset=$(gh api "repos/$GITHUB_REPOSITORY/releases/$ID" \
+            --jq '.assets[] | select(.name == "latest.json") | .id')
+          test -n "$asset" || { echo "::error::В черновике нет latest.json"; exit 1; }
+          gh api -H "Accept: application/octet-stream" \
+            "repos/$GITHUB_REPOSITORY/releases/assets/$asset" > latest.json
+          jq . latest.json
+          jq -e --arg v "$VERSION" '
+            . as $r
+            | ($r.version == $v)
+              and (["windows-x86_64", "linux-x86_64", "darwin-aarch64", "darwin-x86_64"]
+                   | all(. as $k
+                         | ($r.platforms[$k].url // "") != ""
+                           and ($r.platforms[$k].signature // "") != ""))
+          ' latest.json > /dev/null \
+            || { echo "::error::latest.json неполный — перезапусти сборку недостающей платформы"; exit 1; }
+
+      - name: Опубликовать
+        if: vars.AUTO_PUBLISH == 'true'
+        run: |
+          latest=true
+          case "$TAG" in *-*) latest=false ;; esac
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$ID" \
+            -F draft=false -f make_latest="$latest"

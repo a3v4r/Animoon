@@ -2,11 +2,13 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_process::init());
 
     // Второй запуск не открывает новое окно, а показывает уже открытое.
     #[cfg(desktop)]
     {
+        // Обновления — только на компьютере: плагин подключён для десктопных целей (Cargo.toml).
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();

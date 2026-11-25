@@ -1,0 +1,72 @@
+# Проверка на каждый пуш в tauri и на pull request: типы и сборка фронтенда, clippy для Rust.
+name: CI
+
+on:
+  push:
+    branches: [tauri]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  frontend:
+    name: Фронтенд (типы и сборка)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # В package.json нет поля packageManager, поэтому версия pnpm задана здесь (как локально).
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # pnpm build = vue-tsc + vite build.
+      - run: pnpm build
+
+  rust:
+    name: Rust (clippy, Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Системные пакеты (WebKitGTK 4.1)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config \
+            libwebkit2gtk-4.1-dev librsvg2-dev libxdo-dev libssl-dev
+
+      # Версия закреплена: в каждом релизе Rust появляются новые линты, и с -D warnings CI краснел бы
+      # без изменений в коде. Поднимать осознанно (локально сейчас тоже 1.99).
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.0
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      # generate_context!() требует папку frontendDist (../dist); для проверки кода хватит пустой.
+      - name: Заглушка frontendDist
+        run: mkdir -p dist
+
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --locked --all-targets -- -D warnings

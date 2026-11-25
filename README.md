@@ -25,9 +25,25 @@
 - **Поиск и переход** из любого экрана: `Ctrl K`, ищет и разделы, и релизы.
 - **Масштаб интерфейса**: на большом мониторе интерфейс сам становится крупнее; вручную — 100–175%
   в настройках.
+- **Автообновление**: новая версия скачивается и ставится из приложения (проверка раз в 6 часов и кнопкой
+  в настройках).
 - Зеркала API переключаются сами, если основное недоступно.
 
 Торренты, Discord Rich Presence, Chromecast, аналитика и реклама из старой версии убраны.
+
+## Установка
+
+Установщики — на странице [Releases](https://github.com/a3v4r/anilibrix-reborn/releases):
+
+- **Windows** — `*-setup.exe`. Установщик не подписан сертификатом, поэтому при первом запуске SmartScreen
+  покажет «Система Windows защитила ваш компьютер»: «Подробнее» → «Выполнить в любом случае».
+- **macOS** — `*.dmg`, один файл для Apple Silicon и Intel. Приложение не нотаризовано: при первом запуске
+  macOS не даст его открыть — «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».
+- **Linux** — `.deb`, `.rpm` или `.AppImage`. Для видео нужен GStreamer с кодеками (`gstreamer1.0-plugins-good`,
+  `-bad`, `gstreamer1.0-libav`): deb ставит их сам, AppImage везёт с собой. Нужен дистрибутив не старше
+  Ubuntu 22.04 / Debian 12 / Mint 21 (glibc 2.35).
+
+Дальше приложение обновляется само.
 
 ## Горячие клавиши плеера
 
@@ -49,7 +65,7 @@
 
 - Node.js `20.19+` или `22.12+`;
 - pnpm 9 (можно без установки — через `npx -y pnpm@9`);
-- Rust `1.80+` и системные зависимости Tauri для своей ОС — см.
+- Rust `1.90+` и системные зависимости Tauri для своей ОС — см.
   [Prerequisites](https://v2.tauri.app/start/prerequisites/) (на Windows — Microsoft C++ Build Tools и WebView2,
   он уже есть в Windows 10/11; на Linux — `webkit2gtk-4.1` и др.; на macOS — Xcode Command Line Tools).
 
@@ -57,7 +73,7 @@
 pnpm install
 pnpm tauri dev      # окно приложения с горячей перезагрузкой
 pnpm typecheck      # проверка типов
-pnpm tauri build    # установщики в src-tauri/target/release/bundle
+pnpm tauri build    # установщики в src-tauri/target/release/bundle (нужен ключ подписи, см. ниже)
 ```
 
 `pnpm dev` запускает только интерфейс в браузере на `http://127.0.0.1:1420`: управление окном и уведомления
@@ -78,12 +94,30 @@ DevTools-протокол — на `http://127.0.0.1:9222/json/list`.
 | Оформление «Кинотеатр»: цвета, шрифты, общие классы | `src/styles/`, макеты — `docs/design/` |
 
 Стек: Tauri 2, Vite 8, Vue 3.5 + TypeScript, Vuetify 4, Pinia, vue-router, hls.js. Запросы к API идут через
-`tauri-plugin-http` (Rust), а не через `fetch` WebView: без CORS, и прокси настраивается на стороне Rust.
+`tauri-plugin-http` (Rust), а не через `fetch` WebView: без CORS.
+
+CSP задан в `tauri.conf.json` и действует только в собранном приложении (в `pnpm tauri dev` его нет):
+проверять через `pnpm tauri build --debug`. Если AniLibria сменит домен видео (`*.libria.fun`) или зеркал,
+их нужно поправить в трёх местах: `MIRRORS` в `src/api/http.ts`, `http:default` в `capabilities/default.json`
+и CSP.
+
+### Выпуск версии
+
+1. Поднять версию в `package.json`, `src-tauri/tauri.conf.json` и `src-tauri/Cargo.toml` (одинаковую).
+2. Закоммитить и запушить тег: `git tag v2.1.0 && git push origin v2.1.0`.
+3. GitHub Actions (`.github/workflows/release.yml`) соберёт Windows, Linux и macOS и создаст черновик релиза
+   с установщиками и `latest.json`.
+4. Проверить черновик и опубликовать его («Set as latest»). Только после этого установленные копии увидят
+   обновление.
+
+Обновления подписываются ключом Tauri. Он нужен и в CI (секреты `TAURI_SIGNING_PRIVATE_KEY`,
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`), и для локальной `pnpm tauri build` — в тех же переменных окружения.
+Если ключ потерять, уже установленные копии больше не смогут обновиться.
 
 ## Ещё не готово
 
-Прокси и PAC, автообновление, сборка в CI под три ОС, удаление старого кода из `legacy/`.
-Сборка установщиков (`pnpm tauri build`) ещё не проверялась.
+Подпись установщиков сертификатами (Windows, Apple) — без неё при первой установке система предупреждает.
+Своя настройка прокси (сейчас приложение идёт через системный прокси или VPN).
 
 ## Лицензия
 

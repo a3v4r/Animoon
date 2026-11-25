@@ -98,6 +98,29 @@
         </div>
       </section>
 
+      <section v-if="updater.supported" class="group" aria-labelledby="set-update">
+        <h2 id="set-update" class="group-title">Обновления</h2>
+        <div class="panel">
+          <div class="row">
+            <div class="row-text">
+              <div class="row-title">{{ updateTitle }}</div>
+              <div class="row-sub">{{ updateText }}</div>
+            </div>
+            <v-btn
+              v-if="updater.status === 'available' || updater.busy"
+              color="secondary"
+              :loading="updater.status === 'downloading' || updater.status === 'installing'"
+              @click="updater.status === 'ready' ? updater.finish() : updater.install()"
+            >
+              {{ updater.status === 'ready' ? 'Установить' : updater.installError ? 'Повторить' : 'Обновить' }}
+            </v-btn>
+            <v-btn v-else variant="tonal" :loading="updater.status === 'checking'" @click="updater.checkNow()">
+              Проверить
+            </v-btn>
+          </div>
+        </div>
+      </section>
+
       <footer class="about">
         <span class="font-display about-name">AniLibrix</span>
         <span v-if="version">{{ version }}</span>
@@ -119,6 +142,7 @@ import { type Quality, usePlayerStore } from '@/stores/player'
 import { useProgressStore } from '@/stores/progress'
 import { effectiveScale } from '@/composables/useUiScale'
 import { type UiScale, useSettingsStore } from '@/stores/settings'
+import { useUpdaterStore } from '@/stores/updater'
 import { isTauri } from '@/utils/window'
 
 const account = useAccountStore()
@@ -135,6 +159,27 @@ const scales: { title: string, value: UiScale }[] = [
 ]
 // Выбрали явный масштаб, а окно слишком маленькое для него — подскажем.
 const scaleLimited = computed(() => settings.uiScale !== 'auto' && effectiveScale.value < settings.uiScale)
+
+const updater = useUpdaterStore()
+const updateTitle = computed(() => updater.status === 'available' || updater.busy
+  ? `Доступна версия ${updater.version}`
+  : `Установлена версия ${version.value || '—'}`)
+// Без процентов: строка не живая область, но и мелькать ей незачем.
+const updateText = computed(() => {
+  if (updater.installError && (updater.status === 'available' || updater.status === 'ready')) {
+    return `Не удалось обновиться: ${updater.installError}.`
+  }
+  switch (updater.status) {
+    case 'checking': return 'Проверяем…'
+    case 'none': return 'Это последняя версия.'
+    case 'available': return 'Скачается и установится, приложение перезапустится.'
+    case 'downloading': return 'Скачивается…'
+    case 'ready': return 'Скачана. Установится после выхода из плеера или по кнопке.'
+    case 'installing': return 'Устанавливается, приложение сейчас перезапустится.'
+    case 'error': return `Не удалось проверить: ${updater.checkError}.`
+    default: return 'Проверяется само раз в 6 часов.'
+  }
+})
 
 const qualities: { title: string, value: Quality }[] = [
   { title: '1080p', value: '1080' },

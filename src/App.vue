@@ -14,6 +14,7 @@
         </keep-alive>
       </router-view>
     </main>
+    <update-banner :hide-plaque="hideChrome" />
   </v-app>
 </template>
 
@@ -22,10 +23,12 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { type RouteLocationNormalizedLoaded, useRoute, useRouter } from 'vue-router'
 import AppRail from '@/components/shell/AppRail.vue'
 import AppTitleBar from '@/components/shell/AppTitleBar.vue'
+import UpdateBanner from '@/components/shell/UpdateBanner.vue'
 import { useAccountStore } from '@/stores/account'
 import { useEpisodeIndexStore } from '@/stores/episodeIndex'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProgressStore } from '@/stores/progress'
+import { useUpdaterStore } from '@/stores/updater'
 
 const route = useRoute()
 const router = useRouter()
@@ -74,7 +77,10 @@ function scrollToTop (): void {
   mainEl.value?.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' })
 }
 
+const updater = useUpdaterStore()
+
 onMounted(async () => {
+  updater.start()
   await account.init()
   notifications.start()
   await progress.sync()

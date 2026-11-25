@@ -61,7 +61,11 @@ export const useProgressStore = defineStore('progress', () => {
    * Сервер AniLibria молча отбрасывает запись по серии, если предыдущая пришла несколько секунд назад,
    * поэтому одна и та же серия уходит не чаще раза в SEND_INTERVAL, остальное досылается позже.
    */
-  async function flush (): Promise<void> {
+  /**
+   * Отправить очередь. force — всё сразу, без паузы между записями одной серии
+   * (перед закрытием приложения: сервер может отбросить слишком частую запись, но это лучше, чем ничего).
+   */
+  async function flush (force = false): Promise<void> {
     window.clearTimeout(flushTimer)
     flushTimer = undefined
     const account = useAccountStore()
@@ -72,7 +76,7 @@ export const useProgressStore = defineStore('progress', () => {
     let wait = Infinity
     for (const item of pending.values()) {
       const left = (lastSent.get(item.release_episode_id) ?? 0) + SEND_INTERVAL - now
-      if (left <= 0) ready.push(item)
+      if (force || left <= 0) ready.push(item)
       else wait = Math.min(wait, left)
     }
     if (wait !== Infinity) scheduleFlush(wait)
