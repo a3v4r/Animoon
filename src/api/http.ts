@@ -1,11 +1,24 @@
 // В Tauri запросы идут через plugin-http: нет CORS, прокси настраивается в Rust
 
+import { getVersion } from '@tauri-apps/api/app'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 
-export const MIRRORS = ['https://anilibria.top', 'https://aniliberty.top', 'https://api.anilibria.app']
+export const MIRRORS = ['https://aniliberty.top', 'https://anilibria.top', 'https://api.anilibria.app']
 
 const isTauri = '__TAURI_INTERNALS__' in window
 const doFetch: typeof fetch = isTauri ? (tauriFetch as typeof fetch) : window.fetch.bind(window)
+
+// AniLiberty просит называть приложение в User-Agent и Referer, иначе запросы может отсечь спам-фильтр.
+// Referer plugin-http пропускает только с фичей unsafe-headers (src-tauri/Cargo.toml)
+const REPO_URL = 'https://github.com/a3v4r/Animoon'
+const clientHeaders: Promise<Record<string, string>> = isTauri
+  ? getVersion()
+    .catch(() => '')
+    .then(version => ({
+      'User-Agent': `Animoon${version ? `/${version}` : ''} (+${REPO_URL})`,
+      Referer: REPO_URL
+    }))
+  : Promise.resolve({})
 
 let current = 0
 
@@ -59,7 +72,7 @@ async function errorMessage (response: Response): Promise<string> {
 }
 
 export async function api<T> (path: string, options: ApiOptions = {}): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers: Record<string, string> = { ...await clientHeaders, Accept: 'application/json' }
   if (authToken) headers.Authorization = `Bearer ${authToken}`
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
 
@@ -89,5 +102,5 @@ export async function api<T> (path: string, options: ApiOptions = {}): Promise<T
       lastError = error
     }
   }
-  throw lastError instanceof Error ? lastError : new Error('Все зеркала AniLibria недоступны')
+  throw lastError instanceof Error ? lastError : new Error('Все зеркала AniLiberty недоступны')
 }
