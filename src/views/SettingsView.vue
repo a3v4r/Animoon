@@ -125,7 +125,7 @@
         <span class="font-display about-name">Animoon</span>
         <span v-if="version">{{ version }}</span>
         <span>·</span>
-        <span>неофициальный клиент AniLiberty (бывш. AniLibria), не связан с командой проекта</span>
+        <span>неофициальный клиент AniLiberty, не связан с командой проекта</span>
         <span>·</span>
         <span>данные и видео — {{ mirrorHost }}</span>
       </footer>

@@ -5,8 +5,10 @@
   </picture>
 </h1>
 
-Неофициальный клиент [AniLiberty](https://aniliberty.top) (бывшая AniLibria) для Windows, Linux и macOS.
+Неофициальный клиент [AniLiberty](https://aniliberty.top) для Windows, Linux и macOS.
 С командой AniLiberty не связан, всё берётся из их открытого API.
+
+Начинался как форк [AniLibrix](https://github.com/pavloniym/anilibrix), затем был переписан с нуля.
 
 ![Каталог](.github/assets/catalog.jpg)
 
@@ -60,5 +62,4 @@ Tauri 2, Vue 3, TypeScript, Vuetify, hls.js. CSP работает только �
 
 ## Лицензия
 
-[MIT](LICENSE). Началось как форк [AniLibrix](https://github.com/pavloniym/anilibrix), с тех пор код переписан
-с нуля. Шрифты Onest и Unbounded под SIL Open Font License, иконки Material Design Icons под Apache 2.0.
+[MIT](LICENSE). Шрифты Onest и Unbounded под SIL Open Font License, иконки Material Design Icons под Apache 2.0.

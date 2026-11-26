@@ -123,7 +123,7 @@ const progressText = computed(() => {
   background: var(--surface-2);
 }
 
-/* Справа: слева сверху на постерах водяной знак AniLibria */
+/* Справа: слева сверху на постерах водяной знак */
 .badges {
   position: absolute;
   left: 8px;

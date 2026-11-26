@@ -1,7 +1,7 @@
 [package]
 name = "animoon"
 version = "2.0.0"
-description = "Animoon — неофициальный десктопный клиент AniLiberty (бывш. AniLibria)"
+description = "Animoon — неофициальный десктопный клиент AniLiberty"
 license = "MIT"
 edition = "2021"
 rust-version = "1.90"

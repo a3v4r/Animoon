@@ -23,7 +23,7 @@
       v-if="!account.isAuthorized"
       icon="mdi-heart-outline"
       title="Нужен вход"
-      text="Войдите в аккаунт AniLibria, чтобы видеть избранное."
+      text="Войдите в аккаунт AniLiberty, чтобы видеть избранное."
     >
       <v-btn color="secondary" :to="{ name: 'login' }">Войти</v-btn>
     </empty-state>
